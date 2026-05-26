@@ -48,9 +48,10 @@ export default function AdminDashboard() {
       
     // Fetch batches
     loadBatches();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
-  const loadBatches = async () => {
+  async function loadBatches() {
     try {
       const res = await fetch("/api/data/batches");
       const json = await res.json();
