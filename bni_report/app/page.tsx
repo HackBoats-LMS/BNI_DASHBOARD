@@ -71,7 +71,7 @@ export default async function Home() {
         <ChapterScorecard data={data} />
         <OverallReport data={data} chapterData={chapterData} />
       </div>
-      <Table initialData={data} />
+      <Table initialData={data} chapterData={chapterData} />
       <Recognition />
       <ScoringParameters />
     </main>

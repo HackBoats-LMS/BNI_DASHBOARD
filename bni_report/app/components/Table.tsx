@@ -1,12 +1,16 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import MemberModal from './MemberModal';
+import * as htmlToImage from 'html-to-image';
 
-export default function Table({ initialData = [] }: { initialData: any[] }) {
+export default function Table({ initialData = [], chapterData }: { initialData: any[], chapterData?: any }) {
+  const chapterName = chapterData?.chapterName || "Infinity Chapter";
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'score' | 'name'>('score');
   const [selectedMember, setSelectedMember] = useState<any>(null);
+  const [downloading, setDownloading] = useState(false);
+  const tableRef = useRef<HTMLDivElement>(null);
 
   let data = [...initialData];
 
@@ -63,12 +67,41 @@ export default function Table({ initialData = [] }: { initialData: any[] }) {
     return 'bg-[#ef4444]';
   };
 
+  const handleDownload = async () => {
+    if (!tableRef.current) return;
+    setDownloading(true);
+    try {
+      const dataUrl = await htmlToImage.toPng(tableRef.current, { 
+        backgroundColor: '#ffffff',
+        pixelRatio: 2
+      });
+      
+      const link = document.createElement('a');
+      link.download = `bni-chapter-scorecard-${new Date().toISOString().split('T')[0]}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (error) {
+      console.error('Error generating image:', error);
+      alert('Failed to download image.');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
 
   return (
     <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 font-sans pb-12">
-      <div className="bg-white rounded-[14px] shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 overflow-hidden">
+      <div ref={tableRef} className="bg-white rounded-[14px] shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 overflow-hidden">
         {/* Header Section */}
         <div className="p-4 sm:p-6 border-b border-gray-100">
+          
+          <div className="mb-4 sm:mb-6">
+            <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">{chapterName} Scoreboard</h2>
+            <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1">
+              {data.length} members &middot; Tap a row to expand &middot; Traffic light per metric
+            </p>
+          </div>
+
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="relative w-full md:max-w-md flex items-center">
               <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -108,11 +141,19 @@ export default function Table({ initialData = [] }: { initialData: any[] }) {
                 </button>
               </div>
               <span className="text-xs sm:text-sm text-gray-400 hidden lg:inline-block">{data.length} of {initialData.length} members</span>
-              <button className="hidden sm:flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 border border-gray-200 rounded-full text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                Download
+              <button 
+                onClick={handleDownload}
+                disabled={downloading}
+                className="hidden sm:flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 border border-gray-200 rounded-full text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                {downloading ? (
+                  <span className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-gray-300 border-t-gray-700 rounded-full animate-spin"></span>
+                ) : (
+                  <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                )}
+                {downloading ? 'Downloading...' : 'Download'}
               </button>
             </div>
           </div>
