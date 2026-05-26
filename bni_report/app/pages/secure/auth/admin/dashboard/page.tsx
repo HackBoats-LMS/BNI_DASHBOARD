@@ -19,7 +19,8 @@ export default function AdminDashboard() {
     bestAttendance: "",
     bestAttendanceValue: "",
     most1to1s: "",
-    most1to1sValue: ""
+    most1to1sValue: "",
+    meetingsCount: "23"
   });
 
   useEffect(() => {
@@ -183,7 +184,9 @@ export default function AdminDashboard() {
               <form onSubmit={saveTopPerformers} className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Period / Month</label>
-                  <input type="text" name="monthYear" value={topPerformers.monthYear || ""} onChange={handleTopPerformersChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:bg-white focus:ring-2 focus:ring-[#10b981] outline-none" placeholder="e.g. May 2025" required />
+                  <input type="text" name="monthYear" value={topPerformers.monthYear || ""} onChange={handleTopPerformersChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:bg-white focus:ring-2 focus:ring-[#10b981] outline-none mb-2" placeholder="e.g. Jan – May 2025" required />
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Number of Meetings</label>
+                  <input type="text" name="meetingsCount" value={topPerformers.meetingsCount || ""} onChange={handleTopPerformersChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:bg-white focus:ring-2 focus:ring-[#10b981] outline-none" placeholder="e.g. 23" required />
                 </div>
                 
                 <div className="pt-2 border-t border-gray-100">

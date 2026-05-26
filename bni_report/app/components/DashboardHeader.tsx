@@ -1,6 +1,8 @@
 import React from 'react';
 
-export default function DashboardHeader({ data }: { data: any[] }) {
+export default function DashboardHeader({ data, topData }: { data: any[], topData?: any }) {
+  const monthYear = topData?.monthYear || "Jan – May 2025";
+  const meetingsCount = topData?.meetingsCount || "23";
   return (
     <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 mt-4">
       <div>
@@ -12,7 +14,7 @@ export default function DashboardHeader({ data }: { data: any[] }) {
           </span>
           <span className="text-xs text-gray-400 font-medium hidden sm:block">6 / 7 metrics on track</span>
         </div>
-        <p className="text-sm text-gray-400">Jan – May 2025 &middot; 23 meetings &middot; {data.length} active members</p>
+        <p className="text-sm text-gray-400">{monthYear} &middot; {meetingsCount} meetings &middot; {data.length} active members</p>
       </div>
     </div>
   );

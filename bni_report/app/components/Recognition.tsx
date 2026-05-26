@@ -3,7 +3,7 @@ import { connectDB } from '@/lib/db';
 import TopPerformer from '@/models/topPerformer';
 import { unstable_cache } from 'next/cache';
 
-const getCachedTopPerformers = unstable_cache(
+export const getCachedTopPerformers = unstable_cache(
   async () => {
     try {
       await connectDB();

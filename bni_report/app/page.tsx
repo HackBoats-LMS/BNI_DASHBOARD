@@ -3,7 +3,7 @@ import DashboardHeader from "./components/DashboardHeader";
 import ChapterScorecard from "./components/ChapterScorecard";
 import OverallReport from "./components/OverallReport";
 import Table from "./components/Table";
-import Recognition from "./components/Recognition";
+import Recognition, { getCachedTopPerformers } from "./components/Recognition";
 import ScoringParameters from "./components/ScoringParameters";
 import { unstable_cache } from "next/cache";
 import { connectDB } from "@/lib/db";
@@ -38,14 +38,15 @@ const getCachedData = unstable_cache(
 
 export default async function Home() {
   const data = await getCachedData();
+  const topData = await getCachedTopPerformers();
 
   return (
     <main className="min-h-screen bg-[#f9fafb] overflow-x-hidden">
       <Navbar />
       <div className="w-full max-w-[1400px] mx-auto p-4 sm:p-6 lg:p-8 font-sans pb-0">
-        <DashboardHeader data={data} />
+        <DashboardHeader data={data} topData={topData} />
         <ChapterScorecard data={data} />
-        <OverallReport data={data} />
+        <OverallReport data={data} topData={topData} />
       </div>
       <Table initialData={data} />
       <Recognition />

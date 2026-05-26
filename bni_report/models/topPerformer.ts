@@ -8,6 +8,7 @@ const topPerformerSchema = new mongoose.Schema({
   bestAttendanceValue: { type: String, default: "" },
   most1to1s: { type: String, default: "" },
   most1to1sValue: { type: String, default: "" },
+  meetingsCount: { type: String, default: "23" },
 }, { timestamps: true });
 
 delete mongoose.models.TopPerformer;

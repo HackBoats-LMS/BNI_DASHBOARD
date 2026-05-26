@@ -6,7 +6,6 @@ const Navbar = () => {
             <img src="./infinity_no_bg.png" className=' h-[10vh] aspect-auto' alt="" />
             <div>
                 <h1 className='text-xl font-semibold text-gray-700'>BNI REPORT</h1>
-                <h2 className='text-gray-700 leading-none'>11/25 - 05/26</h2>
             </div>
             
         </div>
