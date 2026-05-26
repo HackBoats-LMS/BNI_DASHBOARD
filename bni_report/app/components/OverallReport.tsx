@@ -1,8 +1,8 @@
 import React from 'react';
 import DonutChart from './DonutChart';
 
-export default function OverallReport({ data, topData }: { data: any[], topData?: any }) {
-  const monthYear = topData?.monthYear || "Jan – May 2025";
+export default function OverallReport({ data, chapterData }: { data: any[], chapterData?: any }) {
+  const monthYear = chapterData?.monthYear || "Jan – May 2025";
   const greens = data.filter(d => d.band?.toUpperCase() === 'GREEN');
   const ambers = data.filter(d => d.band?.toUpperCase() === 'AMBER');
   const reds = data.filter(d => d.band?.toUpperCase() === 'RED');

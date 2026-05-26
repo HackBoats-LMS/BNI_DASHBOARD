@@ -19,9 +19,15 @@ export default function AdminDashboard() {
     bestAttendance: "",
     bestAttendanceValue: "",
     most1to1s: "",
-    most1to1sValue: "",
+    most1to1sValue: ""
+  });
+
+  const [chapterSettings, setChapterSettings] = useState({
+    chapterName: "Infinity Chapter",
+    monthYear: "Jan – May 2025",
     meetingsCount: "23"
   });
+  const [savingSettings, setSavingSettings] = useState(false);
 
   useEffect(() => {
     // Basic auth check
@@ -43,6 +49,16 @@ export default function AdminDashboard() {
       .then(res => {
         if (res.success && res.data) {
           setTopPerformers(res.data);
+        }
+      })
+      .catch(console.error);
+      
+    // Fetch chapter settings
+    fetch("/api/chapter-settings")
+      .then(res => res.json())
+      .then(res => {
+        if (res.success && res.data) {
+          setChapterSettings(res.data);
         }
       })
       .catch(console.error);
@@ -131,6 +147,36 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleSettingsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setChapterSettings({
+      ...chapterSettings,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const saveChapterSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingSettings(true);
+    try {
+      const res = await fetch("/api/chapter-settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(chapterSettings)
+      });
+      const result = await res.json();
+      if (result.success) {
+        alert("Chapter settings saved successfully!");
+      } else {
+        alert("Failed to save chapter settings.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error saving settings.");
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("admin_auth");
     router.push("/pages/secure/auth/admin/login");
@@ -175,18 +221,38 @@ export default function AdminDashboard() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          {/* Left Column: Top Performers Form */}
-          <div className="lg:col-span-1">
+          {/* Left Column: Top Performers & Chapter Settings */}
+          <div className="lg:col-span-1 space-y-6">
+            
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-blue-500">⚙️</span> Chapter Settings
+              </h2>
+              <form onSubmit={saveChapterSettings} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Chapter Name</label>
+                  <input type="text" name="chapterName" value={chapterSettings.chapterName || ""} onChange={handleSettingsChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:bg-white focus:ring-2 focus:ring-[#10b981] outline-none mb-2" placeholder="e.g. Infinity Chapter" required />
+                  
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Period / Month</label>
+                  <input type="text" name="monthYear" value={chapterSettings.monthYear || ""} onChange={handleSettingsChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:bg-white focus:ring-2 focus:ring-[#10b981] outline-none mb-2" placeholder="e.g. Jan – May 2025" required />
+                  
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Number of Meetings</label>
+                  <input type="text" name="meetingsCount" value={chapterSettings.meetingsCount || ""} onChange={handleSettingsChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:bg-white focus:ring-2 focus:ring-[#10b981] outline-none" placeholder="e.g. 23" required />
+                </div>
+                <button type="submit" disabled={savingSettings} className="w-full bg-[#3b82f6] hover:bg-[#2563eb] text-white font-bold py-2.5 rounded-lg mt-4 transition-colors disabled:opacity-50">
+                  {savingSettings ? "Saving..." : "Save Settings"}
+                </button>
+              </form>
+            </div>
+
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="text-[#f59e0b]">🏆</span> Set Top Performers
               </h2>
               <form onSubmit={saveTopPerformers} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Period / Month</label>
-                  <input type="text" name="monthYear" value={topPerformers.monthYear || ""} onChange={handleTopPerformersChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:bg-white focus:ring-2 focus:ring-[#10b981] outline-none mb-2" placeholder="e.g. Jan – May 2025" required />
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Number of Meetings</label>
-                  <input type="text" name="meetingsCount" value={topPerformers.meetingsCount || ""} onChange={handleTopPerformersChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:bg-white focus:ring-2 focus:ring-[#10b981] outline-none" placeholder="e.g. 23" required />
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Top Performers Period</label>
+                  <input type="text" name="monthYear" value={topPerformers.monthYear || ""} onChange={handleTopPerformersChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:bg-white focus:ring-2 focus:ring-[#10b981] outline-none" placeholder="e.g. May 2025" required />
                 </div>
                 
                 <div className="pt-2 border-t border-gray-100">

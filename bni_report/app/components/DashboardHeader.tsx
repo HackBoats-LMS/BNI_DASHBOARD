@@ -1,13 +1,14 @@
 import React from 'react';
 
-export default function DashboardHeader({ data, topData }: { data: any[], topData?: any }) {
-  const monthYear = topData?.monthYear || "Jan – May 2025";
-  const meetingsCount = topData?.meetingsCount || "23";
+export default function DashboardHeader({ data, chapterData }: { data: any[], chapterData?: any }) {
+  const monthYear = chapterData?.monthYear || "Jan – May 2025";
+  const meetingsCount = chapterData?.meetingsCount || "23";
+  const chapterName = chapterData?.chapterName || "Infinity Chapter";
   return (
     <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 mt-4">
       <div>
         <div className="flex flex-wrap items-center gap-2 sm:gap-4 mb-2">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Infinity Chapter</h1>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">{chapterName}</h1>
           <span className="px-3 py-1 bg-[#10b981]/10 text-[#10b981] text-[10px] sm:text-[11px] font-bold uppercase tracking-wider rounded-full border border-[#10b981]/20 flex items-center gap-1.5 whitespace-nowrap">
             <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]"></span>
             On Track

@@ -8,6 +8,28 @@ import ScoringParameters from "./components/ScoringParameters";
 import { unstable_cache } from "next/cache";
 import { connectDB } from "@/lib/db";
 import MemberReport from "@/models/memberReport";
+import ChapterSettings from "@/models/chapterSettings";
+
+export const getCachedChapterSettings = unstable_cache(
+  async () => {
+    try {
+      await connectDB();
+      const settings = await ChapterSettings.findOne().sort({ createdAt: -1 }).lean();
+      if (!settings) return null;
+      return {
+        ...settings,
+        _id: settings._id?.toString(),
+        createdAt: settings.createdAt?.toString(),
+        updatedAt: settings.updatedAt?.toString()
+      };
+    } catch (error) {
+      console.error(error);
+      return null;
+    }
+  },
+  ['chapter-settings-cache-key'],
+  { tags: ['chapter-settings'], revalidate: 31536000 }
+);
 
 const getCachedData = unstable_cache(
   async () => {
@@ -39,14 +61,15 @@ const getCachedData = unstable_cache(
 export default async function Home() {
   const data = await getCachedData();
   const topData = await getCachedTopPerformers();
+  const chapterData = await getCachedChapterSettings();
 
   return (
     <main className="min-h-screen bg-[#f9fafb] overflow-x-hidden">
-      <Navbar />
+      <Navbar chapterData={chapterData} />
       <div className="w-full max-w-[1400px] mx-auto p-4 sm:p-6 lg:p-8 font-sans pb-0">
-        <DashboardHeader data={data} topData={topData} />
+        <DashboardHeader data={data} chapterData={chapterData} />
         <ChapterScorecard data={data} />
-        <OverallReport data={data} topData={topData} />
+        <OverallReport data={data} chapterData={chapterData} />
       </div>
       <Table initialData={data} />
       <Recognition />
