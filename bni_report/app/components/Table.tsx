@@ -167,6 +167,7 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
                 <th className="py-4 px-6 font-medium">Member</th>
                 <th className="py-4 px-4 font-medium text-center">Score</th>
                 <th className="py-4 px-4 font-medium text-center hidden md:table-cell">Attendance</th>
+                <th className="py-4 px-4 font-medium text-center hidden md:table-cell">Sponsor</th>
                 <th className="py-4 px-4 font-medium text-center hidden md:table-cell">1-To-1s</th>
                 <th className="py-4 px-4 font-medium text-center hidden md:table-cell">Referrals Given</th>
                 <th className="py-4 px-4 font-medium text-center hidden md:table-cell">Visitors</th>
@@ -215,9 +216,18 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
                   <td className="py-3 px-4 text-center hidden md:table-cell">
                     <div className="flex flex-col items-center gap-1.5">
                       <span className={`text-[13px] font-bold ${getBandTextColor(item.band)}`}>
-                        {item.attendancePercentage ? Math.round(item.attendancePercentage) : 0}%
+                        {item.attendancePoints}
                       </span>
                       <div className={`w-1.5 h-1.5 rounded-full ${getDotColor(item.attendancePoints, 10)}`}></div>
+                    </div>
+                  </td>
+                  
+                  <td className="py-3 px-4 text-center hidden md:table-cell">
+                    <div className="flex flex-col items-center gap-1.5">
+                      <span className={`text-[13px] font-bold ${getBandTextColor(item.band)}`}>
+                        {item.sponsorPoints}
+                      </span>
+                      <div className={`w-1.5 h-1.5 rounded-full ${getDotColor(item.sponsorPoints, 20)}`}></div>
                     </div>
                   </td>
                   
