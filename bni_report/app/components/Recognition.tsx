@@ -1,53 +1,32 @@
-import React from 'react';
-import { connectDB } from '@/lib/db';
-import TopPerformer from '@/models/topPerformer';
-import { unstable_cache } from 'next/cache';
+export default function Recognition({ monthlyData, chapterData }: { monthlyData: any[], chapterData: any }) {
+  if (!monthlyData || monthlyData.length === 0) return null;
 
-export const getCachedTopPerformers = unstable_cache(
-  async () => {
-    try {
-      await connectDB();
-      const topData = await TopPerformer.findOne().sort({ createdAt: -1 }).lean();
-      if (!topData) return null;
-      
-      // Serialize for Server Component to Client boundary (if any)
-      return {
-        ...topData,
-        _id: topData._id?.toString(),
-        createdAt: topData.createdAt?.toString(),
-        updatedAt: topData.updatedAt?.toString()
-      };
-    } catch (error) {
-      console.error(error);
-      return null;
-    }
-  },
-  ['top-performers-cache-key'],
-  { tags: ['top-performers'], revalidate: 31536000 }
-);
+  // Calculate most referrals
+  const sortedByReferrals = [...monthlyData].sort((a, b) => (b.referralsGiven || 0) - (a.referralsGiven || 0));
+  const mostReferralsMember = sortedByReferrals[0];
+  const mostReferrals = mostReferralsMember ? mostReferralsMember.fullName : "N/A";
+  const mostReferralsValue = mostReferralsMember ? mostReferralsMember.referralsGiven || 0 : "-";
 
-export default async function Recognition() {
-  let topData: any = await getCachedTopPerformers();
+  // Calculate best attendance
+  const sortedByAttendance = [...monthlyData].sort((a, b) => (b.attendancePercentage || 0) - (a.attendancePercentage || 0));
+  const bestAttendanceMember = sortedByAttendance[0];
+  const bestAttendance = bestAttendanceMember ? bestAttendanceMember.fullName : "N/A";
+  const bestAttendanceValue = bestAttendanceMember ? Math.round(bestAttendanceMember.attendancePercentage || 0) + "%" : "-";
 
-  if (!topData) {
-    // Fallback if no data is set by admin yet
-    topData = {
-      monthYear: "Current Period",
-      mostReferrals: "Pending Admin",
-      mostReferralsValue: "-",
-      bestAttendance: "Pending Admin",
-      bestAttendanceValue: "-",
-      most1to1s: "Pending Admin",
-      most1to1sValue: "-"
-    };
-  }
+  // Calculate most 1-to-1s
+  const sortedBy1to1s = [...monthlyData].sort((a, b) => (b.onetoone || 0) - (a.onetoone || 0));
+  const most1to1sMember = sortedBy1to1s[0];
+  const most1to1s = most1to1sMember ? most1to1sMember.fullName : "N/A";
+  const most1to1sValue = most1to1sMember ? most1to1sMember.onetoone || 0 : "-";
+
+  const monthYear = chapterData?.monthYear || "Current Period";
 
   return (
     <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 mt-12 mb-4">
       <div className="flex justify-between items-center mb-4">
         <div>
           <h2 className="text-xl font-bold text-gray-900 tracking-tight">Recognition</h2>
-          <p className="text-sm text-gray-500 font-medium mt-0.5">Top performers this period &middot; {topData.monthYear}</p>
+          <p className="text-sm text-gray-500 font-medium mt-0.5">Top performers this period &middot; {monthYear}</p>
         </div>
         <button className="text-gray-400 hover:text-gray-600">
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
@@ -61,8 +40,8 @@ export default async function Recognition() {
           </div>
           <div>
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Most Referrals Given</p>
-            <p className="text-[17px] font-extrabold text-gray-900 leading-tight">{topData.mostReferrals}</p>
-            <p className="text-sm text-gray-500 font-medium">{topData.mostReferralsValue}</p>
+            <p className="text-[17px] font-extrabold text-gray-900 leading-tight">{mostReferrals}</p>
+            <p className="text-sm text-gray-500 font-medium">{mostReferralsValue}</p>
           </div>
         </div>
 
@@ -72,8 +51,8 @@ export default async function Recognition() {
           </div>
           <div>
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Best Attendance</p>
-            <p className="text-[17px] font-extrabold text-gray-900 leading-tight">{topData.bestAttendance}</p>
-            <p className="text-sm text-gray-500 font-medium">{topData.bestAttendanceValue}</p>
+            <p className="text-[17px] font-extrabold text-gray-900 leading-tight">{bestAttendance}</p>
+            <p className="text-sm text-gray-500 font-medium">{bestAttendanceValue}</p>
           </div>
         </div>
 
@@ -83,8 +62,8 @@ export default async function Recognition() {
           </div>
           <div>
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Most 1-to-1 Meetings</p>
-            <p className="text-[17px] font-extrabold text-gray-900 leading-tight">{topData.most1to1s}</p>
-            <p className="text-sm text-gray-500 font-medium">{topData.most1to1sValue}</p>
+            <p className="text-[17px] font-extrabold text-gray-900 leading-tight">{most1to1s}</p>
+            <p className="text-sm text-gray-500 font-medium">{most1to1sValue}</p>
           </div>
         </div>
       </div>

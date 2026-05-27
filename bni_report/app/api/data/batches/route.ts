@@ -3,15 +3,22 @@ import MemberReport from "@/models/memberReport";
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 
-export async function GET() {
+import MonthlyReport from "@/models/monthlyReport";
+
+export async function GET(req: Request) {
   try {
     await connectDB();
-    const batches = await MemberReport.aggregate([
+    const url = new URL(req.url);
+    const type = url.searchParams.get("type");
+    const Model = type === 'monthly' ? MonthlyReport : MemberReport;
+
+    const batches = await Model.aggregate([
       {
         $group: {
           _id: "$uploadBatchId",
           count: { $sum: 1 },
-          createdAt: { $first: "$createdAt" }
+          createdAt: { $first: "$createdAt" },
+          reportType: { $first: { $ifNull: ["$reportType", type === 'monthly' ? "monthly" : "overall"] } }
         }
       },
       { $sort: { createdAt: -1 } }
@@ -27,16 +34,18 @@ export async function DELETE(req: Request) {
     await connectDB();
     const url = new URL(req.url);
     const batchId = url.searchParams.get("batchId");
+    const type = url.searchParams.get("type");
+    const Model = type === 'monthly' ? MonthlyReport : MemberReport;
     
     if (!batchId) {
        return NextResponse.json({ success: false, msg: "No batch ID provided" }, { status: 400 });
     }
 
     if (batchId === "legacy") {
-       await MemberReport.deleteMany({ uploadBatchId: { $exists: false } });
-       await MemberReport.deleteMany({ uploadBatchId: null });
+       await Model.deleteMany({ uploadBatchId: { $exists: false } });
+       await Model.deleteMany({ uploadBatchId: null });
     } else {
-       await MemberReport.deleteMany({ uploadBatchId: batchId });
+       await Model.deleteMany({ uploadBatchId: batchId });
     }
 
     revalidatePath("/", "page");

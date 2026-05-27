@@ -1,5 +1,6 @@
 import { connectDB } from "@/lib/db";
 import MemberReport from "@/models/memberReport";
+import MonthlyReport from "@/models/monthlyReport";
 import { revalidatePath } from "next/cache";
 
 export async function DELETE(req: Request) {
@@ -7,17 +8,19 @@ export async function DELETE(req: Request) {
     await connectDB();
     const url = new URL(req.url);
     const type = url.searchParams.get("type");
+    const modelParam = url.searchParams.get("model");
+    const Model = modelParam === 'monthly' ? MonthlyReport : MemberReport;
 
     if (type === "all") {
-      await MemberReport.deleteMany({});
+      await Model.deleteMany({});
       revalidatePath("/", "page");
       return Response.json({ success: true, msg: "All database records deleted." });
     }
 
     if (type === "old") {
-      const latestDoc = await MemberReport.findOne().sort({ createdAt: -1 });
+      const latestDoc = await Model.findOne().sort({ createdAt: -1 });
       if (latestDoc && latestDoc.uploadBatchId) {
-        await MemberReport.deleteMany({ uploadBatchId: { $ne: latestDoc.uploadBatchId } });
+        await Model.deleteMany({ uploadBatchId: { $ne: latestDoc.uploadBatchId } });
         return Response.json({ success: true, msg: "Old batches deleted from database." });
       } else {
         return Response.json({ success: false, msg: "No old batches found." });

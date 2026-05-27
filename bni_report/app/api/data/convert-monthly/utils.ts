@@ -52,7 +52,7 @@ export function transformMemeber(row: any) {
     }
 
     //visitiors calculation
-    const visitorsCalc = Math.round(V / 6);
+    const visitorsCalc = V;
     let visitorsPoints = 0;
     if (visitorsCalc == 0) {
         visitorsPoints = 0;
@@ -69,7 +69,7 @@ export function transformMemeber(row: any) {
     }
 
     //TYFCB Points calculation
-    const TYFCBCalc = rowTYFCB / 41599;
+    const TYFCBCalc = (rowTYFCB * 6) / 41599;
     let TYFCBPoints = 0;
     if (TYFCBCalc == 0) {
         TYFCBPoints = 0;

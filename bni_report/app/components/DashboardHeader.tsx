@@ -13,7 +13,6 @@ export default function DashboardHeader({ data, chapterData }: { data: any[], ch
             <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]"></span>
             On Track
           </span>
-          <span className="text-xs text-gray-400 font-medium hidden sm:block">6 / 7 metrics on track</span>
         </div>
         <p className="text-sm text-gray-400">{monthYear} &middot; {meetingsCount} meetings &middot; {data.length} active members</p>
       </div>

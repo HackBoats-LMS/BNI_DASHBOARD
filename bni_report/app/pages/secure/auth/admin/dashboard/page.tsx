@@ -10,7 +10,8 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [uploading, setUploading] = useState(false);
   const [savingTop, setSavingTop] = useState(false);
-  
+  const [previewType, setPreviewType] = useState("overall");
+
   // Top Performers State
   const [topPerformers, setTopPerformers] = useState({
     monthYear: "May 2025",
@@ -37,11 +38,15 @@ export default function AdminDashboard() {
       return;
     }
 
-    // Load cached excel data if any
-    const savedData = localStorage.getItem("cached_excel_data");
-    if (savedData) {
-      setData(JSON.parse(savedData));
-    }
+    // Fetch existing data from DB
+    fetch(`/api/data?type=${previewType}`)
+      .then(res => res.json())
+      .then(res => {
+        if (res.data) {
+          setData(res.data);
+        }
+      })
+      .catch(console.error);
 
     // Fetch existing top performers
     fetch("/api/top-performers")
@@ -52,7 +57,7 @@ export default function AdminDashboard() {
         }
       })
       .catch(console.error);
-      
+
     // Fetch chapter settings
     fetch("/api/chapter-settings")
       .then(res => res.json())
@@ -62,32 +67,43 @@ export default function AdminDashboard() {
         }
       })
       .catch(console.error);
-      
+
     // Fetch batches
     loadBatches();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
   async function loadBatches() {
     try {
-      const res = await fetch("/api/data/batches");
-      const json = await res.json();
-      if (json.success) setBatches(json.batches);
+      const [resOverall, resMonthly] = await Promise.all([
+        fetch("/api/data/batches?type=overall"),
+        fetch("/api/data/batches?type=monthly")
+      ]);
+      const [jsonOverall, jsonMonthly] = await Promise.all([resOverall.json(), resMonthly.json()]);
+      
+      let allBatches: any[] = [];
+      if (jsonOverall.success) allBatches = [...allBatches, ...jsonOverall.batches];
+      if (jsonMonthly.success) allBatches = [...allBatches, ...jsonMonthly.batches];
+      
+      allBatches.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setBatches(allBatches);
     } catch (error) {
       console.error("Error loading batches", error);
     }
   };
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>, reportType: string = 'overall') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setUploading(true);
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("reportType", reportType);
 
     try {
-      const res = await fetch("/api/data/convert", {
+      const endpoint = reportType === 'monthly' ? "/api/data/convert-monthly" : "/api/data/convert";
+      const res = await fetch(endpoint, {
         method: "POST",
         body: formData,
       });
@@ -95,10 +111,15 @@ export default function AdminDashboard() {
       const result = await res.json();
 
       if (result.success) {
-        setData(result.data);
-        localStorage.setItem("cached_excel_data", JSON.stringify(result.data));
         alert("Data successfully uploaded and database updated!");
         loadBatches();
+        setPreviewType(reportType);
+        // Refresh data from DB
+        fetch(`/api/data?type=${reportType}`)
+          .then(res => res.json())
+          .then(res => {
+            if (res.data) setData(res.data);
+          });
       } else {
         alert("Upload failed.");
       }
@@ -111,10 +132,7 @@ export default function AdminDashboard() {
   };
 
   const handleClear = () => {
-    if (confirm("Are you sure you want to clear the local table preview?")) {
-      localStorage.removeItem("cached_excel_data");
-      setData([]);
-    }
+    // Disabled since data is fetched from DB
   };
 
   const handleTopPerformersChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -182,10 +200,10 @@ export default function AdminDashboard() {
     router.push("/pages/secure/auth/admin/login");
   };
 
-  const deleteBatch = async (batchId: string) => {
+  const deleteBatch = async (batchId: string, type: string) => {
     if (confirm("Are you sure you want to delete this specific data batch?")) {
       try {
-        const res = await fetch(`/api/data/batches?batchId=${batchId || 'legacy'}`, { method: 'DELETE' });
+        const res = await fetch(`/api/data/batches?batchId=${batchId || 'legacy'}&type=${type || 'overall'}`, { method: 'DELETE' });
         const json = await res.json();
         if (json.success) {
           loadBatches();
@@ -198,7 +216,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const filteredData = data.filter((item) => 
+  const filteredData = data.filter((item) =>
     item.fullName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -210,7 +228,7 @@ export default function AdminDashboard() {
             <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Admin Dashboard</h1>
             <p className="text-sm text-gray-500 font-medium">Manage chapter data and recognition</p>
           </div>
-          <button 
+          <button
             onClick={handleLogout}
             className="text-gray-500 hover:text-red-600 font-bold text-sm transition-colors flex items-center gap-2"
           >
@@ -220,10 +238,10 @@ export default function AdminDashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
+
           {/* Left Column: Top Performers & Chapter Settings */}
           <div className="lg:col-span-1 space-y-6">
-            
+
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="text-blue-500">⚙️</span> Chapter Settings
@@ -232,10 +250,10 @@ export default function AdminDashboard() {
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Chapter Name</label>
                   <input type="text" name="chapterName" value={chapterSettings.chapterName || ""} onChange={handleSettingsChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:bg-white focus:ring-2 focus:ring-[#10b981] outline-none mb-2" placeholder="e.g. Infinity Chapter" required />
-                  
+
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Period / Month</label>
                   <input type="text" name="monthYear" value={chapterSettings.monthYear || ""} onChange={handleSettingsChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:bg-white focus:ring-2 focus:ring-[#10b981] outline-none mb-2" placeholder="e.g. Jan – May 2025" required />
-                  
+
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Number of Meetings</label>
                   <input type="text" name="meetingsCount" value={chapterSettings.meetingsCount || ""} onChange={handleSettingsChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:bg-white focus:ring-2 focus:ring-[#10b981] outline-none" placeholder="e.g. 23" required />
                 </div>
@@ -254,7 +272,7 @@ export default function AdminDashboard() {
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Top Performers Period</label>
                   <input type="text" name="monthYear" value={topPerformers.monthYear || ""} onChange={handleTopPerformersChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:bg-white focus:ring-2 focus:ring-[#10b981] outline-none" placeholder="e.g. May 2025" required />
                 </div>
-                
+
                 <div className="pt-2 border-t border-gray-100">
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1 text-[#b90000]">Most Referrals</label>
                   <input type="text" name="mostReferrals" value={topPerformers.mostReferrals || ""} onChange={handleTopPerformersChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 mb-2 outline-none" placeholder="Member Name" />
@@ -287,19 +305,34 @@ export default function AdminDashboard() {
                 <span className="text-[#10b981]">📊</span> Upload BNI Report (Excel)
               </h2>
               <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center p-6 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
-                <input 
-                  type="file" 
-                  accept=".xlsx,.xls" 
-                  onChange={handleUpload} 
+                <input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={(e) => handleUpload(e, 'overall')}
                   disabled={uploading}
                   className="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-[#10b981]/10 file:text-[#10b981] hover:file:bg-[#10b981]/20 transition-all cursor-pointer"
                 />
                 {uploading && <span className="text-sm font-bold text-[#10b981] animate-pulse">Processing...</span>}
               </div>
+              <p className="text-xs text-gray-400 font-medium mt-3 mb-6">This will parse the Excel file, calculate scores, and update the database for the Overall Scoreboard.</p>
+
+              <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-[#3b82f6]">📊</span> Upload Monthly Report
+              </h2>
+              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center p-6 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
+                <input 
+                  type="file" 
+                  accept=".xlsx,.xls" 
+                  onChange={(e) => handleUpload(e, 'monthly')} 
+                  disabled={uploading}
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-[#3b82f6]/10 file:text-[#3b82f6] hover:file:bg-[#3b82f6]/20 transition-all cursor-pointer"
+                />
+                {uploading && <span className="text-sm font-bold text-[#3b82f6] animate-pulse">Processing...</span>}
+              </div>
               <p className="text-xs text-gray-400 font-medium mt-3">This will parse the Excel file, calculate scores, and update the database immediately.</p>
-              
+
               <div className="mt-6 pt-6 border-t border-gray-100 flex gap-3">
-                <button 
+                <button
                   onClick={async () => {
                     if (confirm("Are you sure you want to delete all historical old data? This will keep only the most recently uploaded batch.")) {
                       const res = await fetch("/api/data/purge?type=old", { method: "DELETE" });
@@ -312,15 +345,14 @@ export default function AdminDashboard() {
                 >
                   Delete Old Data
                 </button>
-                <button 
+                <button
                   onClick={async () => {
                     if (confirm("WARNING: Are you sure you want to completely clear the entire database?")) {
                       const res = await fetch("/api/data/purge?type=all", { method: "DELETE" });
                       const json = await res.json();
                       if (json.success) {
-                         setData([]);
-                         localStorage.removeItem("cached_excel_data");
-                         loadBatches();
+                        setData([]);
+                        loadBatches();
                       }
                       alert(json.msg);
                     }
@@ -346,12 +378,13 @@ export default function AdminDashboard() {
                       <div>
                         <p className="font-bold text-gray-900 text-sm flex items-center gap-2">
                           Batch ID: {batch._id ? new Date(batch._id).toLocaleString() : 'Legacy Data'}
+                          <span className={`px-2 py-0.5 text-[10px] rounded-full uppercase tracking-wider ${batch.reportType === 'monthly' ? 'bg-[#3b82f6]/10 text-[#3b82f6]' : 'bg-gray-100 text-gray-500'}`}>{batch.reportType || 'overall'}</span>
                           {idx === 0 && <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] rounded-full uppercase tracking-wider">Latest</span>}
                         </p>
                         <p className="text-xs text-gray-500 font-medium mt-1">{batch.count} member records</p>
                       </div>
-                      <button 
-                        onClick={() => deleteBatch(batch._id)}
+                      <button
+                        onClick={() => deleteBatch(batch._id, batch.reportType)}
                         className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-colors"
                         title="Delete this batch"
                       >
@@ -366,22 +399,24 @@ export default function AdminDashboard() {
             {/* Table Preview */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="p-4 sm:p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <h3 className="font-bold text-gray-900">Data Preview</h3>
+                <h3 className="font-bold text-gray-900">
+                  Data Preview <span className="text-xs font-normal text-gray-500 uppercase tracking-wider bg-gray-100 px-2 py-1 rounded ml-2">{previewType}</span>
+                </h3>
                 {data.length > 0 && (
                   <div className="flex items-center gap-3 w-full sm:w-auto">
                     <div className="relative w-full sm:w-64">
                       <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                       </svg>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="Search members..." 
+                        placeholder="Search members..."
                         className="w-full pl-9 pr-8 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:bg-white focus:ring-2 focus:ring-[#10b981] outline-none transition-all"
                       />
                       {searchTerm && (
-                        <button 
+                        <button
                           onClick={() => setSearchTerm('')}
                           className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
                         >
@@ -395,7 +430,7 @@ export default function AdminDashboard() {
                   </div>
                 )}
               </div>
-              
+
               {data.length === 0 ? (
                 <div className="p-12 text-center text-gray-400 font-medium text-sm">
                   Upload an Excel file to see the parsed data preview.

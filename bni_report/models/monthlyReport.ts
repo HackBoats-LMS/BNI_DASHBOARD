@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const memberReportSchema =
+const monthlyReportSchema =
   new mongoose.Schema({
 
     fullName: {
@@ -102,9 +102,9 @@ const memberReportSchema =
     timestamps: true,
   });
 
-delete mongoose.models.MemberReport;
+delete mongoose.models.MonthlyReport;
 
 export default mongoose.model(
-  "MemberReport",
-  memberReportSchema
+  "MonthlyReport",
+  monthlyReportSchema
 );

@@ -40,7 +40,7 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
       default: return 'bg-[#9ca3af]';
     }
   };
-  
+
   const getBandTextColor = (band: string) => {
     switch (band?.toUpperCase()) {
       case 'GREEN': return 'text-[#10b981]';
@@ -49,7 +49,7 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
       default: return 'text-[#9ca3af]';
     }
   };
-  
+
   const getBandBgLight = (band: string) => {
     switch (band?.toUpperCase()) {
       case 'GREEN': return 'bg-[#10b981]/10';
@@ -71,11 +71,11 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
     if (!tableRef.current) return;
     setDownloading(true);
     try {
-      const dataUrl = await htmlToImage.toPng(tableRef.current, { 
+      const dataUrl = await htmlToImage.toPng(tableRef.current, {
         backgroundColor: '#ffffff',
         pixelRatio: 2
       });
-      
+
       const link = document.createElement('a');
       link.download = `bni-chapter-scorecard-${new Date().toISOString().split('T')[0]}.png`;
       link.href = dataUrl;
@@ -94,7 +94,7 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
       <div ref={tableRef} className="bg-white rounded-[14px] shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 overflow-hidden">
         {/* Header Section */}
         <div className="p-4 sm:p-6 border-b border-gray-100">
-          
+
           <div className="mb-4 sm:mb-6">
             <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">{chapterName} Scoreboard</h2>
             <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1">
@@ -107,15 +107,15 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
               <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by name or role..." 
+                placeholder="Search by name or role..."
                 className="w-full pl-10 pr-10 py-2 bg-gray-50/80 border border-gray-200 rounded-full text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#10b981] focus:bg-white transition-all"
               />
               {search && (
-                <button 
+                <button
                   onClick={() => setSearch('')}
                   className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
                   aria-label="Clear search"
@@ -124,16 +124,16 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
                 </button>
               )}
             </div>
-            
+
             <div className="flex flex-wrap items-center justify-between w-full md:w-auto gap-2 sm:gap-4">
               <div className="flex bg-gray-100/80 rounded-full p-1">
-                <button 
+                <button
                   onClick={() => setSortBy('score')}
                   className={`px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium rounded-full shadow-sm transition-colors ${sortBy === 'score' ? 'bg-[#cc0000] text-white' : 'text-gray-600 hover:bg-gray-200/50'}`}
                 >
                   By Score
                 </button>
-                <button 
+                <button
                   onClick={() => setSortBy('name')}
                   className={`px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium rounded-full shadow-sm transition-colors ${sortBy === 'name' ? 'bg-[#cc0000] text-white' : 'text-gray-600 hover:bg-gray-200/50'}`}
                 >
@@ -141,7 +141,7 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
                 </button>
               </div>
               <span className="text-xs sm:text-sm text-gray-400 hidden lg:inline-block">{data.length} of {initialData.length} members</span>
-              <button 
+              <button
                 onClick={handleDownload}
                 disabled={downloading}
                 className="hidden sm:flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 border border-gray-200 rounded-full text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
@@ -187,22 +187,22 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
                       </div>
                       <div>
                         <p className="text-sm font-bold text-gray-900">{item.fullName}</p>
-                        <p className="text-[11px] text-gray-400">BNI Member</p>
+                        <p className="text-[11px] text-gray-400">Chapter Member</p>
                       </div>
                     </div>
                   </td>
-                  
+
                   {/* Score column */}
                   <td className="py-3 px-4 text-center align-middle">
                     <div className="flex flex-col items-center gap-1.5">
                       <div className="w-12 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full rounded-full ${getBandColor(item.band)}`} 
+                        <div
+                          className={`h-full rounded-full ${getBandColor(item.band)}`}
                           style={{ width: `${item.totalScore || 0}%` }}
                         />
                       </div>
                       <span className="text-[10px] font-medium text-gray-400 uppercase flex items-center gap-1">
-                        {item.totalScore || 0}/100 
+                        {item.totalScore || 0}/100
                         {(item.totalScore || 0) >= 70 && (
                           <svg className="w-3 h-3 text-[#10b981]" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -221,7 +221,7 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
                       <div className={`w-1.5 h-1.5 rounded-full ${getDotColor(item.attendancePoints, 10)}`}></div>
                     </div>
                   </td>
-                  
+
                   <td className="py-3 px-4 text-center hidden md:table-cell">
                     <div className="flex flex-col items-center gap-1.5">
                       <span className={`text-[13px] font-bold ${getBandTextColor(item.band)}`}>
@@ -230,52 +230,52 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
                       <div className={`w-1.5 h-1.5 rounded-full ${getDotColor(item.sponsorPoints, 20)}`}></div>
                     </div>
                   </td>
-                  
+
                   <td className="py-3 px-4 text-center hidden md:table-cell">
                     <div className="flex flex-col items-center gap-1.5">
                       <span className={`text-[13px] font-bold ${getBandTextColor(item.band)}`}>
-                        {item.onetoone !== undefined ? item.onetoone.toFixed(1) : 0}
+                        {item.onetoonePoints || 0}
                       </span>
                       <div className={`w-1.5 h-1.5 rounded-full ${getDotColor(item.onetoonePoints, 20)}`}></div>
                     </div>
                   </td>
-                  
+
                   <td className="py-3 px-4 text-center hidden md:table-cell">
                     <div className="flex flex-col items-center gap-1.5">
                       <span className={`text-[13px] font-bold ${getBandTextColor(item.band)}`}>
-                        {item.referals !== undefined ? item.referals.toFixed(1) : 0}
+                        {item.referalPoints || 0}
                       </span>
                       <div className={`w-1.5 h-1.5 rounded-full ${getDotColor(item.referalPoints, 25)}`}></div>
                     </div>
                   </td>
-                  
+
                   <td className="py-3 px-4 text-center hidden md:table-cell">
                     <div className="flex flex-col items-center gap-1.5">
                       <span className={`text-[13px] font-bold ${getBandTextColor(item.band)}`}>
-                        {item.visitors || 0}
+                        {item.visitorsPoints || 0}
                       </span>
                       <div className={`w-1.5 h-1.5 rounded-full ${getDotColor(item.visitorsPoints, 25)}`}></div>
                     </div>
                   </td>
-                  
+
                   <td className="py-3 px-4 text-center hidden md:table-cell">
                     <div className="flex flex-col items-center gap-1.5">
                       <span className={`text-[13px] font-bold ${getBandTextColor(item.band)}`}>
-                        {(item.TYFCB || 0) >= 1000 ? ((item.TYFCB || 0)/1000).toFixed(2) + 'k' : Number(item.TYFCB || 0).toFixed(2)}
+                        {item.TYFCBPoints || 0}
                       </span>
                       <div className={`w-1.5 h-1.5 rounded-full ${getDotColor(item.TYFCBPoints, 5)}`}></div>
                     </div>
                   </td>
-                  
+
                   <td className="py-3 px-4 text-center hidden md:table-cell">
                     <div className="flex flex-col items-center gap-1.5">
                       <span className={`text-[13px] font-bold ${getBandTextColor(item.band)}`}>
-                        {item.CEU !== undefined ? item.CEU.toFixed(1) : 0}
+                        {item.CEUPoints || 0}
                       </span>
                       <div className={`w-1.5 h-1.5 rounded-full ${getDotColor(item.CEUPoints, 10)}`}></div>
                     </div>
                   </td>
-                  
+
                   <td className="py-3 px-6 text-right">
                     <svg className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -283,7 +283,7 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
                   </td>
                 </tr>
               ))}
-              
+
               {data.length === 0 && (
                 <tr>
                   <td colSpan={9} className="py-16 text-center">
@@ -292,7 +292,7 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
                       <p className="text-gray-500 font-medium">No members found</p>
-                      <p className="text-sm text-gray-400 mt-1">Upload a BNI Excel report to see the scoreboard.</p>
+                      <p className="text-sm text-gray-400 mt-1">Upload an Excel report to see the scoreboard.</p>
                     </div>
                   </td>
                 </tr>

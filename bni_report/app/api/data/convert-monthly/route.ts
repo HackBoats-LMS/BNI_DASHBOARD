@@ -1,8 +1,9 @@
 
 import * as XLSX from "xlsx";
-import { transformMemeber } from "./functions";
+import { transformMemeber } from "./utils";
+
 import { connectDB } from "@/lib/db";
-import MemberReport from "@/models/memberReport";
+import MonthlyReport from "@/models/monthlyReport";
 import { revalidatePath, revalidateTag } from "next/cache";
 
 export async function POST(req: Request) {
@@ -10,7 +11,6 @@ export async function POST(req: Request) {
         await connectDB();
         const formData = await req.formData();
         const file = formData.get("file");
-        const reportType = formData.get("reportType") || "overall";
 
         if (!file || !(file instanceof File)) {
             return Response.json(
@@ -72,9 +72,9 @@ export async function POST(req: Request) {
         const new_data = filteredData.map((row: any) => ({
             ...transformMemeber(row),
             uploadBatchId: batchId,
-            reportType
+            reportType: "monthly"
         }));
-        await MemberReport.insertMany(new_data);
+        await MonthlyReport.insertMany(new_data);
 
         revalidatePath("/", "page");
         revalidateTag("excel-data");

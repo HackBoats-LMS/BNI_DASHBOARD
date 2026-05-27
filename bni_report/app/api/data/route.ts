@@ -2,16 +2,26 @@ import memberReport from "@/models/memberReport";
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 
-export async function GET() {
+import MonthlyReport from "@/models/monthlyReport";
+
+export async function GET(req: Request) {
     await connectDB();
-    const latestDoc = await memberReport.findOne().sort({ createdAt: -1 });
+    const { searchParams } = new URL(req.url);
+    const type = searchParams.get('type') || 'overall';
+    
+    const Model = type === 'monthly' ? MonthlyReport : memberReport;
+    const query = type === 'overall' 
+        ? { $or: [{ reportType: 'overall' }, { reportType: { $exists: false } }] }
+        : { reportType: type };
+        
+    const latestDoc = await Model.findOne(query).sort({ createdAt: -1 });
     let data = [];
     
     if (latestDoc && latestDoc.uploadBatchId) {
-        data = await memberReport.find({ uploadBatchId: latestDoc.uploadBatchId });
+        data = await Model.find({ uploadBatchId: latestDoc.uploadBatchId });
     } else {
         // Fallback for legacy data before uploadBatchId was introduced
-        data = await memberReport.find();
+        data = await Model.find(query);
     }
     
     return NextResponse.json({ data });

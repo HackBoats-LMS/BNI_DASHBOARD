@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function ChapterScorecard({ data, chapterData }: { data: any[], chapterData?: any }) {
+export default function MonthlyScorecard({ data, chapterData, title }: { data: any[], chapterData?: any, title?: string }) {
   const count = data.length || 1;
   const avgAttendance = data.reduce((sum, item) => sum + (item.attendancePercentage || 0), 0) / count;
   const avg1to1s = data.reduce((sum, item) => sum + (item.onetoone || 0), 0) / count;
@@ -21,7 +21,7 @@ export default function ChapterScorecard({ data, chapterData }: { data: any[], c
       )
     },
     {
-      name: "1-TO-1S", value: avg1to1s.toFixed(1), target: 25, progress: Math.min((avg1to1s / 25) * 100, 100),
+      name: "1-TO-1S", value: avg1to1s.toFixed(1), target: 4, progress: Math.min((avg1to1s / 4) * 100, 100),
       color: "bg-[#10b981]", dot: "bg-[#10b981]", textStyle: "text-[#10b981]", bgStyle: "bg-[#10b981]/10",
       icon: (
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -30,7 +30,7 @@ export default function ChapterScorecard({ data, chapterData }: { data: any[], c
       )
     },
     {
-      name: "REFERRALS", value: avgReferrals.toFixed(1), target: 25, progress: Math.min((avgReferrals / 25) * 100, 100),
+      name: "REFERRALS", value: avgReferrals.toFixed(1), target: 4, progress: Math.min((avgReferrals / 4) * 100, 100),
       color: "bg-[#10b981]", dot: "bg-[#10b981]", textStyle: "text-[#10b981]", bgStyle: "bg-[#10b981]/10",
       icon: (
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -42,7 +42,7 @@ export default function ChapterScorecard({ data, chapterData }: { data: any[], c
       )
     },
     {
-      name: "VISITORS", value: avgVisitors.toFixed(1), target: 6, progress: Math.min((avgVisitors / 6) * 100, 100),
+      name: "VISITORS", value: avgVisitors.toFixed(1), target: 1, progress: Math.min((avgVisitors / 1) * 100, 100),
       color: "bg-[#f59e0b]", dot: "bg-[#f59e0b]", textStyle: "text-[#f59e0b]", bgStyle: "bg-[#f59e0b]/10",
       icon: (
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -51,7 +51,7 @@ export default function ChapterScorecard({ data, chapterData }: { data: any[], c
       )
     },
     {
-      name: "TYFCB", value: (avgTYFCB / 1000).toFixed(1) + 'k', target: "300k", progress: Math.min((avgTYFCB / 300000) * 100, 100),
+      name: "TYFCB", value: (avgTYFCB / 1000).toFixed(1) + 'k', target: "50k", progress: Math.min((avgTYFCB / 50000) * 100, 100),
       color: "bg-[#10b981]", dot: "bg-[#10b981]", textStyle: "text-[#10b981]", bgStyle: "bg-[#10b981]/10",
       icon: (
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -60,7 +60,7 @@ export default function ChapterScorecard({ data, chapterData }: { data: any[], c
       )
     },
     {
-      name: "CEU", value: avgCEU.toFixed(1), target: 25, progress: Math.min((avgCEU / 25) * 100, 100),
+      name: "CEU", value: avgCEU.toFixed(1), target: 4, progress: Math.min((avgCEU / 4) * 100, 100),
       color: "bg-[#10b981]", dot: "bg-[#10b981]", textStyle: "text-[#10b981]", bgStyle: "bg-[#10b981]/10",
       icon: (
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -69,7 +69,7 @@ export default function ChapterScorecard({ data, chapterData }: { data: any[], c
       )
     },
     {
-      name: "SPONSORS", value: avgSponsors.toFixed(1), target: 1, progress: Math.min((avgSponsors / 1) * 100, 100),
+      name: "SPONSORS", value: avgSponsors.toFixed(1), target: 0.2, progress: Math.min((avgSponsors / 0.2) * 100, 100),
       color: "bg-[#10b981]", dot: "bg-[#10b981]", textStyle: "text-[#10b981]", bgStyle: "bg-[#10b981]/10",
       icon: (
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -79,10 +79,12 @@ export default function ChapterScorecard({ data, chapterData }: { data: any[], c
     }
   ];
 
+  const displayTitle = title || `Chapter Scorecard (${chapterData?.monthYear})`;
+
   return (
     <div className="mb-8">
-      <h2 className="text-[15px] font-bold text-gray-900 mb-1">Chapter Scorecard ({chapterData?.monthYear})</h2>
-      <p className="text-xs text-gray-400 mb-4">Average per member performance &middot; 6-month targets shown</p>
+      <h2 className="text-[15px] font-bold text-gray-900 mb-1">{displayTitle}</h2>
+      <p className="text-xs text-gray-400 mb-4">Average per member performance &middot; monthly targets shown</p>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-3">
         {metrics.map((m, i) => (
