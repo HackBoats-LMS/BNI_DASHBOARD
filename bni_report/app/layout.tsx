@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   title: "BNI Dashboard",
   description: "BNI Dashboard",
   icons: {
-   icon:"/infinity logo.png"
+   icon:"/impactSync.jpeg"
   }
 };
 

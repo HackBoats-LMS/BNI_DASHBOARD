@@ -12,7 +12,8 @@ export default function MemberModal({ member, onClose }: { member: any, onClose:
   const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'BN';
 
   const metricsInfo = [
-    { key: 'attendance', label: 'Attendance', value: `${member.attendancePercentage ? Math.round(member.attendancePercentage) : 0}%`, target: '95%', points: member.attendancePoints, max: 10, action: 'Attend more meetings' },
+    { key: 'attendance', label: 'Attendance', value: `${member.attendancePoints}`, target: '10', points: member.attendancePoints, max: 10, action: 'Attend more meetings' },
+    { key: 'sponsor', label: 'Sponsor', value: member.sponsorPoints, target: '1', points: member.sponsorPoints, max: 20, action: 'Sponsor more members' },
     { key: 'onetoone', label: '1-to-1s', value: member.onetoone !== undefined ? member.onetoone.toFixed(1) : 0, target: '1.0+', points: member.onetoonePoints, max: 20, action: 'Schedule more 1-to-1s' },
     { key: 'referals', label: 'Referrals', value: member.referals !== undefined ? member.referals.toFixed(1) : 0, target: '1.25+', points: member.referalPoints, max: 25, action: 'Pass more referrals' },
     { key: 'visitors', label: 'Visitors', value: member.visitors || 0, target: '1+', points: member.visitorsPoints, max: 25, action: 'Invite more visitors' },
@@ -104,15 +105,16 @@ export default function MemberModal({ member, onClose }: { member: any, onClose:
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
             <div className="w-full sm:w-1/2">
               <div className="w-full h-2.5 bg-gray-200 rounded-full overflow-hidden flex shadow-inner">
-                <div className="h-full bg-[#10b981]" style={{ width: `${(greenCount / 6) * 100}%` }}></div>
-                <div className="h-full bg-[#f59e0b]" style={{ width: `${(amberCount / 6) * 100}%` }}></div>
-                <div className="h-full bg-[#ef4444]" style={{ width: `${(redCount / 6) * 100}%` }}></div>
+                <div className="h-full bg-[#10b981]" style={{ width: `${(greenCount / metrics.length) * 100}%` }}></div>
+                <div className="h-full bg-[#f59e0b]" style={{ width: `${(amberCount / metrics.length) * 100}%` }}></div>
+                <div className="h-full bg-[#ef4444]" style={{ width: `${(redCount / metrics.length) * 100}%` }}></div>
               </div>
             </div>
             <div className="flex flex-wrap gap-4 text-[11px] font-bold uppercase tracking-wider text-gray-500">
               <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#10b981]"></div> {greenCount} Green</div>
               <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#f59e0b]"></div> {amberCount} Amber</div>
               <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-[#ef4444]"></div> {redCount} Red</div>
+              <div className="text-xs text-gray-400">of {metrics.length} metrics</div>
             </div>
           </div>
 
@@ -153,7 +155,7 @@ export default function MemberModal({ member, onClose }: { member: any, onClose:
                     <h4 className="text-base sm:text-lg font-bold">
                       {greenCount >= 4 ? `Well done, ${member.fullName.split(' ')[0]}!` : `Time to push, ${member.fullName.split(' ')[0]}!`}
                     </h4>
-                    <p className="text-[11px] sm:text-xs text-white/80 font-medium mt-0.5">{greenCount} of 6 metrics green &middot; {6 - greenCount} to push further</p>
+                    <p className="text-[11px] sm:text-xs text-white/80 font-medium mt-0.5">{greenCount} of {metrics.length} metrics green &middot; {metrics.length - greenCount} to push further</p>
                   </div>
                 </div>
                 <div className="text-2xl sm:text-3xl font-extrabold shrink-0">{member.totalScore || 0}<span className="text-xs sm:text-sm font-bold text-white/70">/100</span></div>

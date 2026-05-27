@@ -49,7 +49,7 @@ export default function OverallReport({ data, chapterData }: { data: any[], chap
 
   return (
     <div className="bg-white rounded-[14px] shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-gray-100 overflow-hidden mb-8">
-      <div className="bg-[#b90000] p-4 sm:p-5 text-white flex flex-wrap justify-between items-center gap-4">
+      <div className="bg-emerald-600 p-4 sm:p-5 text-white flex flex-wrap justify-between items-center gap-4">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
             <svg className="w-5 h-5 text-white/90" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
