@@ -77,6 +77,7 @@ export async function POST(req: Request) {
         await MemberReport.insertMany(new_data);
 
         revalidatePath("/", "page");
+        // @ts-ignore
         revalidateTag("excel-data");
 
         return Response.json({ success: true, data: new_data });

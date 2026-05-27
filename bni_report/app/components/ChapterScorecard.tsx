@@ -10,9 +10,17 @@ export default function ChapterScorecard({ data, chapterData }: { data: any[], c
   const avgCEU = data.reduce((sum, item) => sum + (item.CEU || 0), 0) / count;
   const avgSponsors = data.reduce((sum, item) => sum + (item.sponsorPoints ? item.sponsorPoints / 5 : 0), 0) / count;
 
+  const avgAttendancePts = data.reduce((sum, item) => sum + (item.attendancePoints || 0), 0) / count;
+  const avg1to1sPts = data.reduce((sum, item) => sum + (item.onetoonePoints || 0), 0) / count;
+  const avgReferralsPts = data.reduce((sum, item) => sum + (item.referalPoints || 0), 0) / count;
+  const avgVisitorsPts = data.reduce((sum, item) => sum + (item.visitorsPoints || 0), 0) / count;
+  const avgTYFCBPts = data.reduce((sum, item) => sum + (item.TYFCBPoints || 0), 0) / count;
+  const avgCEUPts = data.reduce((sum, item) => sum + (item.CEUPoints || 0), 0) / count;
+  const avgSponsorsPts = data.reduce((sum, item) => sum + (item.sponsorPoints || 0), 0) / count;
+
   const metrics = [
     {
-      name: "ATTENDANCE", value: Math.round(avgAttendance) + "%", target: "95%", progress: avgAttendance,
+      name: "ATTENDANCE", value: Math.round(avgAttendance) + "%", points: avgAttendancePts.toFixed(1), target: "95%", progress: avgAttendance,
       color: "bg-[#10b981]", dot: "bg-[#10b981]", textStyle: "text-[#10b981]", bgStyle: "bg-[#10b981]/10",
       icon: (
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -21,7 +29,7 @@ export default function ChapterScorecard({ data, chapterData }: { data: any[], c
       )
     },
     {
-      name: "1-TO-1S", value: avg1to1s.toFixed(1), target: 25, progress: Math.min((avg1to1s / 25) * 100, 100),
+      name: "1-TO-1S", value: avg1to1s.toFixed(1), points: avg1to1sPts.toFixed(1), target: 25, progress: Math.min((avg1to1s / 25) * 100, 100),
       color: "bg-[#10b981]", dot: "bg-[#10b981]", textStyle: "text-[#10b981]", bgStyle: "bg-[#10b981]/10",
       icon: (
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -30,7 +38,7 @@ export default function ChapterScorecard({ data, chapterData }: { data: any[], c
       )
     },
     {
-      name: "REFERRALS", value: avgReferrals.toFixed(1), target: 25, progress: Math.min((avgReferrals / 25) * 100, 100),
+      name: "REFERRALS", value: avgReferrals.toFixed(1), points: avgReferralsPts.toFixed(1), target: 25, progress: Math.min((avgReferrals / 25) * 100, 100),
       color: "bg-[#10b981]", dot: "bg-[#10b981]", textStyle: "text-[#10b981]", bgStyle: "bg-[#10b981]/10",
       icon: (
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -42,7 +50,7 @@ export default function ChapterScorecard({ data, chapterData }: { data: any[], c
       )
     },
     {
-      name: "VISITORS", value: avgVisitors.toFixed(1), target: 6, progress: Math.min((avgVisitors / 6) * 100, 100),
+      name: "VISITORS", value: avgVisitors.toFixed(1), points: avgVisitorsPts.toFixed(1), target: 6, progress: Math.min((avgVisitors / 6) * 100, 100),
       color: "bg-[#f59e0b]", dot: "bg-[#f59e0b]", textStyle: "text-[#f59e0b]", bgStyle: "bg-[#f59e0b]/10",
       icon: (
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -51,7 +59,7 @@ export default function ChapterScorecard({ data, chapterData }: { data: any[], c
       )
     },
     {
-      name: "TYFCB", value: (avgTYFCB / 1000).toFixed(1) + 'k', target: "300k", progress: Math.min((avgTYFCB / 300000) * 100, 100),
+      name: "TYFCB", value: (avgTYFCB / 1000).toFixed(1) + 'k', points: avgTYFCBPts.toFixed(1), target: "300k", progress: Math.min((avgTYFCB / 300000) * 100, 100),
       color: "bg-[#10b981]", dot: "bg-[#10b981]", textStyle: "text-[#10b981]", bgStyle: "bg-[#10b981]/10",
       icon: (
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -60,7 +68,7 @@ export default function ChapterScorecard({ data, chapterData }: { data: any[], c
       )
     },
     {
-      name: "CEU", value: avgCEU.toFixed(1), target: 25, progress: Math.min((avgCEU / 25) * 100, 100),
+      name: "CEU", value: avgCEU.toFixed(1), points: avgCEUPts.toFixed(1), target: 25, progress: Math.min((avgCEU / 25) * 100, 100),
       color: "bg-[#10b981]", dot: "bg-[#10b981]", textStyle: "text-[#10b981]", bgStyle: "bg-[#10b981]/10",
       icon: (
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -69,7 +77,7 @@ export default function ChapterScorecard({ data, chapterData }: { data: any[], c
       )
     },
     {
-      name: "SPONSORS", value: avgSponsors.toFixed(1), target: 1, progress: Math.min((avgSponsors / 1) * 100, 100),
+      name: "SPONSORS", value: avgSponsors.toFixed(1), points: avgSponsorsPts.toFixed(1), target: 1, progress: Math.min((avgSponsors / 1) * 100, 100),
       color: "bg-[#10b981]", dot: "bg-[#10b981]", textStyle: "text-[#10b981]", bgStyle: "bg-[#10b981]/10",
       icon: (
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -94,9 +102,18 @@ export default function ChapterScorecard({ data, chapterData }: { data: any[], c
               </div>
             </div>
             <div className="mt-auto">
-              <div className="text-2xl sm:text-3xl font-extrabold text-gray-900 text-right mb-3">{m.value}</div>
-              <div className="text-[10px] font-bold text-gray-400 tracking-wider mb-2">{m.name}</div>
-              <div className="flex justify-between items-center text-[10px] text-gray-400 mb-1.5">
+              <div className="flex flex-col items-end mb-4">
+                <div className="flex items-baseline gap-1 mb-1">
+                  <span className="text-3xl font-extrabold text-gray-900 leading-none">{m.points}</span>
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">avg pts</span>
+                </div>
+                <div className="text-[12px] font-bold text-gray-400">
+                  {m.value} <span className="font-medium text-[10px] lowercase text-gray-300">avg</span>
+                </div>
+              </div>
+
+              <div className="text-[10px] font-bold text-gray-400 tracking-wider mb-2 uppercase">{m.name}</div>
+              <div className="flex justify-between items-center text-[10px] text-gray-400 mb-1.5 w-full">
                 <span>Target: {m.target}</span>
                 <span className={`font-bold ${m.color.replace('bg-', 'text-')}`}>{Math.round(m.progress)}%</span>
               </div>

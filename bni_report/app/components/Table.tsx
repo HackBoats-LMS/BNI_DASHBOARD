@@ -67,6 +67,14 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
     return 'bg-[#ef4444]';
   };
 
+  const getMetricTextColor = (points: number, maxPoints: number) => {
+    if (points === undefined) return 'text-[#9ca3af]';
+    const ratio = points / maxPoints;
+    if (ratio >= 0.7) return 'text-[#10b981]';
+    if (ratio >= 0.4) return 'text-[#f59e0b]';
+    return 'text-[#ef4444]';
+  };
+
   const handleDownload = async () => {
     if (!tableRef.current) return;
     setDownloading(true);
@@ -215,7 +223,7 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
                   {/* Metrics */}
                   <td className="py-3 px-4 text-center hidden md:table-cell">
                     <div className="flex flex-col items-center gap-1.5">
-                      <span className={`text-[13px] font-bold ${getBandTextColor(item.band)}`}>
+                      <span className={`text-[13px] font-bold ${getMetricTextColor(item.attendancePoints, 10)}`}>
                         {item.attendancePoints}
                       </span>
                       <div className={`w-1.5 h-1.5 rounded-full ${getDotColor(item.attendancePoints, 10)}`}></div>
@@ -224,16 +232,16 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
 
                   <td className="py-3 px-4 text-center hidden md:table-cell">
                     <div className="flex flex-col items-center gap-1.5">
-                      <span className={`text-[13px] font-bold ${getBandTextColor(item.band)}`}>
+                      <span className={`text-[13px] font-bold ${getMetricTextColor(item.sponsorPoints, 5)}`}>
                         {item.sponsorPoints}
                       </span>
-                      <div className={`w-1.5 h-1.5 rounded-full ${getDotColor(item.sponsorPoints, 20)}`}></div>
+                      <div className={`w-1.5 h-1.5 rounded-full ${getDotColor(item.sponsorPoints, 5)}`}></div>
                     </div>
                   </td>
 
                   <td className="py-3 px-4 text-center hidden md:table-cell">
                     <div className="flex flex-col items-center gap-1.5">
-                      <span className={`text-[13px] font-bold ${getBandTextColor(item.band)}`}>
+                      <span className={`text-[13px] font-bold ${getMetricTextColor(item.onetoonePoints, 20)}`}>
                         {item.onetoonePoints || 0}
                       </span>
                       <div className={`w-1.5 h-1.5 rounded-full ${getDotColor(item.onetoonePoints, 20)}`}></div>
@@ -242,7 +250,7 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
 
                   <td className="py-3 px-4 text-center hidden md:table-cell">
                     <div className="flex flex-col items-center gap-1.5">
-                      <span className={`text-[13px] font-bold ${getBandTextColor(item.band)}`}>
+                      <span className={`text-[13px] font-bold ${getMetricTextColor(item.referalPoints, 25)}`}>
                         {item.referalPoints || 0}
                       </span>
                       <div className={`w-1.5 h-1.5 rounded-full ${getDotColor(item.referalPoints, 25)}`}></div>
@@ -251,7 +259,7 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
 
                   <td className="py-3 px-4 text-center hidden md:table-cell">
                     <div className="flex flex-col items-center gap-1.5">
-                      <span className={`text-[13px] font-bold ${getBandTextColor(item.band)}`}>
+                      <span className={`text-[13px] font-bold ${getMetricTextColor(item.visitorsPoints, 25)}`}>
                         {item.visitorsPoints || 0}
                       </span>
                       <div className={`w-1.5 h-1.5 rounded-full ${getDotColor(item.visitorsPoints, 25)}`}></div>
@@ -260,7 +268,7 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
 
                   <td className="py-3 px-4 text-center hidden md:table-cell">
                     <div className="flex flex-col items-center gap-1.5">
-                      <span className={`text-[13px] font-bold ${getBandTextColor(item.band)}`}>
+                      <span className={`text-[13px] font-bold ${getMetricTextColor(item.TYFCBPoints, 5)}`}>
                         {item.TYFCBPoints || 0}
                       </span>
                       <div className={`w-1.5 h-1.5 rounded-full ${getDotColor(item.TYFCBPoints, 5)}`}></div>
@@ -269,7 +277,7 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
 
                   <td className="py-3 px-4 text-center hidden md:table-cell">
                     <div className="flex flex-col items-center gap-1.5">
-                      <span className={`text-[13px] font-bold ${getBandTextColor(item.band)}`}>
+                      <span className={`text-[13px] font-bold ${getMetricTextColor(item.CEUPoints, 10)}`}>
                         {item.CEUPoints || 0}
                       </span>
                       <div className={`w-1.5 h-1.5 rounded-full ${getDotColor(item.CEUPoints, 10)}`}></div>
