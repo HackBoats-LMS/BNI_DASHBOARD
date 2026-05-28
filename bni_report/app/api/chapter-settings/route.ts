@@ -1,6 +1,6 @@
 import { connectDB } from "@/lib/db";
 import ChapterSettings from "@/models/chapterSettings";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 export async function GET() {
   try {
@@ -20,10 +20,15 @@ export async function POST(req: Request) {
     await connectDB();
     const body = await req.json();
     
-    await ChapterSettings.deleteMany({});
-    const newRecord = await ChapterSettings.create(body);
+    const newRecord = await ChapterSettings.findOneAndUpdate(
+      {},
+      { $set: body },
+      { upsert: true, new: true, setDefaultsOnInsert: true, sort: { createdAt: -1 } }
+    );
 
     revalidatePath("/", "page");
+    // @ts-ignore
+    revalidateTag("chapter-settings");
 
     return Response.json({ success: true, data: newRecord });
   } catch (error) {

@@ -3,25 +3,40 @@ import React from 'react';
 export default function MonthlyScorecard({ data, chapterData, title }: { data: any[], chapterData?: any, title?: string }) {
   const count = data.length || 1;
   const avgAttendance = data.reduce((sum, item) => sum + (item.attendancePercentage || 0), 0) / count;
-  const avg1to1s = data.reduce((sum, item) => sum + (item.onetoone || 0), 0) / count;
-  const avgReferrals = data.reduce((sum, item) => sum + (item.referals || 0), 0) / count;
-  const avgVisitors = data.reduce((sum, item) => sum + (item.visitors || 0), 0) / count;
-  const avgTYFCB = data.reduce((sum, item) => sum + (item.TYFCB || 0), 0) / count;
-  const avgCEU = data.reduce((sum, item) => sum + (item.CEU || 0), 0) / count;
-  const avgSponsors = data.reduce((sum, item) => sum + (item.sponsorPoints ? item.sponsorPoints / 5 : 0), 0) / count;
+  const total1to1s = data.reduce((sum, item) => sum + (item.onetoone || 0), 0);
+  const totalReferrals = data.reduce((sum, item) => sum + (item.referals || 0), 0);
+  const totalVisitors = data.reduce((sum, item) => sum + (item.visitors || 0), 0);
+  const totalTYFCB = data.reduce((sum, item) => sum + (item.TYFCB || 0), 0);
+  const totalCEU = data.reduce((sum, item) => sum + (item.CEU || 0), 0) / 10;
+  const totalSponsors = data.reduce((sum, item) => sum + (item.sponsorPoints ? item.sponsorPoints / 5 : 0), 0);
 
-  const avgAttendancePts = data.reduce((sum, item) => sum + (item.attendancePoints || 0), 0) / count;
-  const avg1to1sPts = data.reduce((sum, item) => sum + (item.onetoonePoints || 0), 0) / count;
-  const avgReferralsPts = data.reduce((sum, item) => sum + (item.referalPoints || 0), 0) / count;
-  const avgVisitorsPts = data.reduce((sum, item) => sum + (item.visitorsPoints || 0), 0) / count;
-  const avgTYFCBPts = data.reduce((sum, item) => sum + (item.TYFCBPoints || 0), 0) / count;
-  const avgCEUPts = data.reduce((sum, item) => sum + (item.CEUPoints || 0), 0) / count;
-  const avgSponsorsPts = data.reduce((sum, item) => sum + (item.sponsorPoints || 0), 0) / count;
+  const formatCurrency = (val: number) => {
+    if (val >= 10000000) return (val / 10000000).toFixed(2) + 'Cr';
+    if (val >= 100000) return (val / 100000).toFixed(2) + 'L';
+    if (val >= 1000) return (val / 1000).toFixed(1) + 'k';
+    return val.toFixed(0);
+  };
+
+  const t1to1s = chapterData?.monthly1to1sTarget ? Number(chapterData.monthly1to1sTarget) : 4 * count;
+  const tReferrals = chapterData?.monthlyReferralsTarget ? Number(chapterData.monthlyReferralsTarget) : 4 * count;
+  const tVisitors = chapterData?.monthlyVisitorsTarget ? Number(chapterData.monthlyVisitorsTarget) : 1 * count;
+  const tTYFCB = chapterData?.monthlyTYFCBTarget ? Number(chapterData.monthlyTYFCBTarget) : 50000 * count;
+  const tCEU = chapterData?.monthlyCEUTarget ? Number(chapterData.monthlyCEUTarget) : 4 * count;
+  const tSponsors = chapterData?.monthlySponsorsTarget ? Number(chapterData.monthlySponsorsTarget) : 0.2 * count;
+
+  const getMetricColor = (actual: number, target: number) => {
+    const ratio = target > 0 ? actual / target : 1;
+    if (ratio >= 1.0) return { bgClass: "bg-[#10b981]", textClass: "text-[#10b981]", lightBgClass: "bg-[#10b981]/10" };
+    if (ratio >= 0.8) return { bgClass: "bg-[#f59e0b]", textClass: "text-[#f59e0b]", lightBgClass: "bg-[#f59e0b]/10" };
+    return { bgClass: "bg-[#ef4444]", textClass: "text-[#ef4444]", lightBgClass: "bg-[#ef4444]/10" };
+  };
+
+  const tAttendance = Number(chapterData?.attendanceTarget) || 95;
 
   const metrics = [
     {
-      name: "ATTENDANCE", value: Math.round(avgAttendance) + "%", points: avgAttendancePts.toFixed(1), target: "95%", progress: avgAttendance,
-      color: "bg-[#10b981]", dot: "bg-[#10b981]", textStyle: "text-[#10b981]", bgStyle: "bg-[#10b981]/10",
+      name: "ATTENDANCE", value: Math.round(avgAttendance) + "%", target: `${tAttendance}%`, progress: avgAttendance,
+      ...getMetricColor(avgAttendance, tAttendance),
       icon: (
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -29,8 +44,8 @@ export default function MonthlyScorecard({ data, chapterData, title }: { data: a
       )
     },
     {
-      name: "1-TO-1S", value: avg1to1s.toFixed(1), points: avg1to1sPts.toFixed(1), target: 4, progress: Math.min((avg1to1s / 4) * 100, 100),
-      color: "bg-[#10b981]", dot: "bg-[#10b981]", textStyle: "text-[#10b981]", bgStyle: "bg-[#10b981]/10",
+      name: "1-TO-1S", value: total1to1s.toString(), target: t1to1s, progress: Math.min((total1to1s / t1to1s) * 100, 100),
+      ...getMetricColor(total1to1s, t1to1s),
       icon: (
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -38,8 +53,8 @@ export default function MonthlyScorecard({ data, chapterData, title }: { data: a
       )
     },
     {
-      name: "REFERRALS", value: avgReferrals.toFixed(1), points: avgReferralsPts.toFixed(1), target: 4, progress: Math.min((avgReferrals / 4) * 100, 100),
-      color: "bg-[#10b981]", dot: "bg-[#10b981]", textStyle: "text-[#10b981]", bgStyle: "bg-[#10b981]/10",
+      name: "REFERRALS", value: totalReferrals.toString(), target: tReferrals, progress: Math.min((totalReferrals / tReferrals) * 100, 100),
+      ...getMetricColor(totalReferrals, tReferrals),
       icon: (
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
           <path d="M14 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -50,8 +65,8 @@ export default function MonthlyScorecard({ data, chapterData, title }: { data: a
       )
     },
     {
-      name: "VISITORS", value: avgVisitors.toFixed(1), points: avgVisitorsPts.toFixed(1), target: 1, progress: Math.min((avgVisitors / 1) * 100, 100),
-      color: "bg-[#f59e0b]", dot: "bg-[#f59e0b]", textStyle: "text-[#f59e0b]", bgStyle: "bg-[#f59e0b]/10",
+      name: "VISITORS", value: totalVisitors.toString(), target: tVisitors, progress: Math.min((totalVisitors / tVisitors) * 100, 100),
+      ...getMetricColor(totalVisitors, tVisitors),
       icon: (
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
@@ -59,8 +74,8 @@ export default function MonthlyScorecard({ data, chapterData, title }: { data: a
       )
     },
     {
-      name: "TYFCB", value: (avgTYFCB / 1000).toFixed(1) + 'k', points: avgTYFCBPts.toFixed(1), target: "50k", progress: Math.min((avgTYFCB / 50000) * 100, 100),
-      color: "bg-[#10b981]", dot: "bg-[#10b981]", textStyle: "text-[#10b981]", bgStyle: "bg-[#10b981]/10",
+      name: "TYFCB", value: formatCurrency(totalTYFCB), target: formatCurrency(tTYFCB), progress: Math.min((totalTYFCB / tTYFCB) * 100, 100),
+      ...getMetricColor(totalTYFCB, tTYFCB),
       icon: (
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
@@ -68,17 +83,17 @@ export default function MonthlyScorecard({ data, chapterData, title }: { data: a
       )
     },
     {
-      name: "CEU", value: avgCEU.toFixed(1), points: avgCEUPts.toFixed(1), target: 4, progress: Math.min((avgCEU / 4) * 100, 100),
-      color: "bg-[#10b981]", dot: "bg-[#10b981]", textStyle: "text-[#10b981]", bgStyle: "bg-[#10b981]/10",
+      name: "CEU (HOURS)", value: totalCEU.toFixed(1), target: tCEU, progress: Math.min((totalCEU / tCEU) * 100, 100),
+      ...getMetricColor(totalCEU, tCEU),
       icon: (
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477-4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
         </svg>
       )
     },
     {
-      name: "SPONSORS", value: avgSponsors.toFixed(1), points: avgSponsorsPts.toFixed(1), target: 0.2, progress: Math.min((avgSponsors / 0.2) * 100, 100),
-      color: "bg-[#10b981]", dot: "bg-[#10b981]", textStyle: "text-[#10b981]", bgStyle: "bg-[#10b981]/10",
+      name: "SPONSORS", value: totalSponsors.toString(), target: tSponsors, progress: Math.min((totalSponsors / tSponsors) * 100, 100),
+      ...getMetricColor(totalSponsors, tSponsors),
       icon: (
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -92,35 +107,27 @@ export default function MonthlyScorecard({ data, chapterData, title }: { data: a
   return (
     <div className="mb-8">
       <h2 className="text-[15px] font-bold text-gray-900 mb-1">{displayTitle}</h2>
-      <p className="text-xs text-gray-400 mb-4">Average per member performance &middot; monthly targets shown</p>
+      <p className="text-xs text-gray-400 mb-4">Chapter totals &middot; monthly targets shown</p>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-3">
         {metrics.map((m, i) => (
           <div key={i} className="bg-white p-3 sm:p-4 rounded-[14px] shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-col relative">
-            <div className={`absolute top-4 right-4 w-1.5 h-1.5 rounded-full ${m.dot}`}></div>
+            <div className={`absolute top-4 right-4 w-1.5 h-1.5 rounded-full ${m.bgClass}`}></div>
             <div className="mb-4">
-              <div className={`w-8 h-8 rounded-full ${m.bgStyle} flex items-center justify-center ${m.textStyle}`}>
+              <div className={`w-8 h-8 rounded-full ${m.lightBgClass} flex items-center justify-center ${m.textClass}`}>
                 {m.icon}
               </div>
             </div>
             <div className="mt-auto">
-              <div className="flex flex-col items-end mb-4">
-                <div className="flex items-baseline gap-1 mb-1">
-                  <span className="text-3xl font-extrabold text-gray-900 leading-none">{m.points}</span>
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">avg pts</span>
-                </div>
-                <div className="text-[12px] font-bold text-gray-400">
-                  {m.value} <span className="font-medium text-[10px] lowercase text-gray-300">avg</span>
-                </div>
-              </div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-gray-900 text-right mb-3">{m.value}</div>
 
               <div className="text-[10px] font-bold text-gray-400 tracking-wider mb-2 uppercase">{m.name}</div>
               <div className="flex justify-between items-center text-[10px] text-gray-400 mb-1.5 w-full">
                 <span>Target: {m.target}</span>
-                <span className={`font-bold ${m.color.replace('bg-', 'text-')}`}>{Math.round(m.progress)}%</span>
+                <span className={`font-bold ${m.textClass}`}>{Math.round(m.progress)}%</span>
               </div>
               <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden">
-                <div className={`h-full rounded-full ${m.color}`} style={{ width: `${m.progress}%` }}></div>
+                <div className={`h-full rounded-full ${m.bgClass}`} style={{ width: `${m.progress}%` }}></div>
               </div>
             </div>
           </div>

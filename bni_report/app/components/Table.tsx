@@ -78,19 +78,103 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
   const handleDownload = async () => {
     if (!tableRef.current) return;
     setDownloading(true);
+    
+    // Yield to the browser so it can instantly paint the "Downloading..." state
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
     try {
-      const dataUrl = await htmlToImage.toPng(tableRef.current, {
+      const dataUrl = await htmlToImage.toJpeg(tableRef.current, {
         backgroundColor: '#ffffff',
-        pixelRatio: 2
+        pixelRatio: 1.5,
+        quality: 0.85,
+        filter: (node) => {
+          const el = node as HTMLElement;
+          return !(el.classList && el.classList.contains('hide-in-pdf'));
+        }
       });
 
-      const link = document.createElement('a');
-      link.download = `bni-chapter-scorecard-${new Date().toISOString().split('T')[0]}.png`;
-      link.href = dataUrl;
-      link.click();
+      const { jsPDF } = await import('jspdf');
+      
+      const imgProps = new Image();
+      imgProps.src = dataUrl;
+      await new Promise((resolve) => { imgProps.onload = resolve; });
+
+      // Fetch HB.png and convert to base64
+      let hbDataUrl = null;
+      try {
+        const res = await fetch('/HB.png');
+        const blob = await res.blob();
+        hbDataUrl = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(blob);
+        });
+      } catch (err) {
+        console.error("Failed to load HB logo", err);
+      }
+
+      let hbImgProps = null;
+      if (hbDataUrl) {
+        hbImgProps = new Image();
+        hbImgProps.src = hbDataUrl;
+        await new Promise((resolve) => { hbImgProps.onload = resolve; });
+      }
+
+      // Create a custom page size that fits the entire table + padding
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'px',
+        format: [imgProps.width + 80, imgProps.height + 560]
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+
+      // Background
+      pdf.setFillColor(255, 255, 255);
+      pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
+
+      // Add ImpactSync logo text at top left
+      pdf.setFontSize(108);
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(6, 78, 59); // emerald-900
+      pdf.text("Impact", 40, 160);
+      const impactWidth = pdf.getTextWidth("Impact");
+      pdf.setTextColor(5, 150, 105); // emerald-600
+      pdf.text("Sync", 40 + impactWidth, 160);
+
+      // Add Chapter Scoreboard title
+      pdf.setFontSize(48);
+      pdf.setTextColor(17, 24, 39); // gray-900
+      pdf.text(`${chapterName} Scoreboard`, 40, 240);
+
+      // Add Table image (Using JPEG for massive size reduction)
+      pdf.addImage(dataUrl, 'JPEG', 40, 300, imgProps.width, imgProps.height);
+
+      // Add powered by hackboats at bottom right
+      pdf.setFontSize(36);
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(107, 114, 128); // gray-500
+      const poweredByText = "powered by";
+      const pbWidth = pdf.getTextWidth(poweredByText);
+
+      if (hbImgProps && hbDataUrl) {
+        const hbHeight = 100; 
+        const hbWidth = (hbImgProps.width * hbHeight) / hbImgProps.height;
+        
+        // Stack them vertically, left-aligned with each other, but the whole block right-aligned to the page
+        const blockLeft = pdfWidth - 40 - Math.max(hbWidth, pbWidth);
+        
+        pdf.text(poweredByText, blockLeft, pdfHeight - 200); 
+        pdf.addImage(hbDataUrl, 'PNG', blockLeft, pdfHeight - 180, hbWidth, hbHeight);
+      } else {
+        pdf.text("powered by hackboats", pdfWidth - 300, pdfHeight - 100);
+      }
+
+      pdf.save(`bni-chapter-scorecard-${new Date().toISOString().split('T')[0]}.pdf`);
     } catch (error) {
-      console.error('Error generating image:', error);
-      alert('Failed to download image.');
+      console.error('Error generating PDF:', error);
+      alert('Failed to download PDF.');
     } finally {
       setDownloading(false);
     }
@@ -99,7 +183,7 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
 
   return (
     <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 font-sans pb-12">
-      <div ref={tableRef} className="bg-white rounded-[14px] shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-[14px] shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-gray-100 overflow-hidden">
         {/* Header Section */}
         <div className="p-4 sm:p-6 border-b border-gray-100">
 
@@ -152,7 +236,7 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
               <button
                 onClick={handleDownload}
                 disabled={downloading}
-                className="hidden sm:flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 border border-gray-200 rounded-full text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                className="hidden sm:flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 border border-gray-200 rounded-full text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-wait"
               >
                 {downloading ? (
                   <span className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-gray-300 border-t-gray-700 rounded-full animate-spin"></span>
@@ -169,7 +253,7 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
 
         {/* Table View */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-full md:min-w-[900px]">
+          <table ref={tableRef} className="w-full text-left border-collapse min-w-full md:min-w-[900px] bg-white">
             <thead>
               <tr className="border-b border-gray-100 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
                 <th className="py-4 px-6 font-medium">Member</th>
@@ -181,7 +265,7 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
                 <th className="py-4 px-4 font-medium text-center hidden md:table-cell">Visitors</th>
                 <th className="py-4 px-4 font-medium text-center hidden md:table-cell">TYFCB</th>
                 <th className="py-4 px-4 font-medium text-center hidden md:table-cell">CEU</th>
-                <th className="py-4 px-6 text-right"></th>
+                <th className="py-4 px-6 text-right hide-in-pdf"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50/80">
@@ -284,7 +368,7 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
                     </div>
                   </td>
 
-                  <td className="py-3 px-6 text-right">
+                  <td className="py-3 px-6 text-right hide-in-pdf">
                     <svg className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
@@ -312,7 +396,7 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
 
       {/* Modal */}
       {selectedMember && (
-        <MemberModal member={selectedMember} onClose={() => setSelectedMember(null)} />
+        <MemberModal member={selectedMember} onClose={() => setSelectedMember(null)} chapterData={chapterData} />
       )}
     </div>
   );

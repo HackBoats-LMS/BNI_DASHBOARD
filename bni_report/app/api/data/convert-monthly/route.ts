@@ -11,6 +11,7 @@ export async function POST(req: Request) {
         await connectDB();
         const formData = await req.formData();
         const file = formData.get("file");
+        const monthlyMonthName = formData.get("monthlyMonthName");
 
         if (!file || !(file instanceof File)) {
             return Response.json(
@@ -76,9 +77,20 @@ export async function POST(req: Request) {
         }));
         await MonthlyReport.insertMany(new_data);
 
+        if (monthlyMonthName && typeof monthlyMonthName === 'string') {
+            const ChapterSettings = (await import("@/models/chapterSettings")).default;
+            await ChapterSettings.findOneAndUpdate(
+                {},
+                { $set: { monthlyMonthYear: monthlyMonthName } },
+                { upsert: true, sort: { createdAt: -1 } }
+            );
+        }
+
         revalidatePath("/", "page");
         // @ts-ignore
         revalidateTag("excel-data");
+        // @ts-ignore
+        revalidateTag("chapter-settings");
 
         return Response.json({ success: true, data: new_data });
 

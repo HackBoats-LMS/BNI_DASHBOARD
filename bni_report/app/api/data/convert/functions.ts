@@ -52,7 +52,7 @@ export function transformMemeber(row: any) {
     }
 
     //visitiors calculation
-    const visitorsCalc = Math.round(V / 6);
+    const visitorsCalc = V;
     let visitorsPoints = 0;
     if (visitorsCalc == 0) {
         visitorsPoints = 0;

@@ -23,12 +23,13 @@ export default function AdminDashboard() {
     most1to1sValue: ""
   });
 
-  const [chapterSettings, setChapterSettings] = useState({
+  const [chapterSettings, setChapterSettings] = useState<any>({
     chapterName: "Infinity Chapter",
     monthYear: "Jan – May 2025",
     meetingsCount: "23"
   });
   const [savingSettings, setSavingSettings] = useState(false);
+  const [monthlyMonthName, setMonthlyMonthName] = useState("");
 
   useEffect(() => {
     // Basic auth check
@@ -100,6 +101,9 @@ export default function AdminDashboard() {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("reportType", reportType);
+    if (reportType === 'monthly' && monthlyMonthName) {
+      formData.append("monthlyMonthName", monthlyMonthName);
+    }
 
     try {
       const endpoint = reportType === 'monthly' ? "/api/data/convert-monthly" : "/api/data/convert";
@@ -172,24 +176,114 @@ export default function AdminDashboard() {
     });
   };
 
-  const saveChapterSettings = async (e: React.FormEvent) => {
+  const saveBasicSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     setSavingSettings(true);
     try {
+      const payload = {
+        chapterName: chapterSettings.chapterName,
+        monthYear: chapterSettings.monthYear,
+        meetingsCount: chapterSettings.meetingsCount
+      };
       const res = await fetch("/api/chapter-settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(chapterSettings)
+        body: JSON.stringify(payload)
       });
-      const result = await res.json();
-      if (result.success) {
-        alert("Chapter settings saved successfully!");
-      } else {
-        alert("Failed to save chapter settings.");
+      const data = await res.json();
+      if (data.success) {
+        alert("Basic settings saved successfully!");
+        setChapterSettings((prev: any) => ({ ...prev, ...data.data }));
       }
     } catch (err) {
-      console.error(err);
-      alert("Error saving settings.");
+      alert("Error saving settings");
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
+  const saveOverallTargets = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingSettings(true);
+    try {
+      const payload = {
+        attendanceTarget: chapterSettings.attendanceTarget,
+        overall1to1sTarget: chapterSettings.overall1to1sTarget,
+        overallReferralsTarget: chapterSettings.overallReferralsTarget,
+        overallVisitorsTarget: chapterSettings.overallVisitorsTarget,
+        overallTYFCBTarget: chapterSettings.overallTYFCBTarget,
+        overallCEUTarget: chapterSettings.overallCEUTarget,
+        overallSponsorsTarget: chapterSettings.overallSponsorsTarget,
+      };
+      const res = await fetch("/api/chapter-settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("Overall targets saved successfully!");
+        setChapterSettings((prev: any) => ({ ...prev, ...data.data }));
+      }
+    } catch (err) {
+      alert("Error saving overall targets");
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
+  const saveMonthlyTargets = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingSettings(true);
+    try {
+      const payload = {
+        monthly1to1sTarget: chapterSettings.monthly1to1sTarget,
+        monthlyReferralsTarget: chapterSettings.monthlyReferralsTarget,
+        monthlyVisitorsTarget: chapterSettings.monthlyVisitorsTarget,
+        monthlyTYFCBTarget: chapterSettings.monthlyTYFCBTarget,
+        monthlyCEUTarget: chapterSettings.monthlyCEUTarget,
+        monthlySponsorsTarget: chapterSettings.monthlySponsorsTarget,
+      };
+      const res = await fetch("/api/chapter-settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("Monthly targets saved successfully!");
+        setChapterSettings((prev: any) => ({ ...prev, ...data.data }));
+      }
+    } catch (err) {
+      alert("Error saving monthly targets");
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
+  const saveIndividualTargets = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingSettings(true);
+    try {
+      const payload = {
+        individual1to1sTarget: chapterSettings.individual1to1sTarget,
+        individualReferralsTarget: chapterSettings.individualReferralsTarget,
+        individualVisitorsTarget: chapterSettings.individualVisitorsTarget,
+        individualTYFCBTarget: chapterSettings.individualTYFCBTarget,
+        individualCEUTarget: chapterSettings.individualCEUTarget,
+      };
+      const res = await fetch("/api/chapter-settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("Individual targets saved successfully!");
+        setChapterSettings((prev: any) => ({ ...prev, ...data.data }));
+      }
+    } catch (err) {
+      alert("Error saving individual targets");
     } finally {
       setSavingSettings(false);
     }
@@ -246,7 +340,7 @@ export default function AdminDashboard() {
               <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="text-blue-500">⚙️</span> Chapter Settings
               </h2>
-              <form onSubmit={saveChapterSettings} className="space-y-4">
+              <form onSubmit={saveBasicSettings} className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Chapter Name</label>
                   <input type="text" name="chapterName" value={chapterSettings.chapterName || ""} onChange={handleSettingsChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:bg-white focus:ring-2 focus:ring-[#10b981] outline-none mb-2" placeholder="e.g. Infinity Chapter" required />
@@ -257,8 +351,119 @@ export default function AdminDashboard() {
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Number of Meetings</label>
                   <input type="text" name="meetingsCount" value={chapterSettings.meetingsCount || ""} onChange={handleSettingsChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:bg-white focus:ring-2 focus:ring-[#10b981] outline-none" placeholder="e.g. 23" required />
                 </div>
-                <button type="submit" disabled={savingSettings} className="w-full bg-[#3b82f6] hover:bg-[#2563eb] text-white font-bold py-2.5 rounded-lg mt-4 transition-colors disabled:opacity-50">
-                  {savingSettings ? "Saving..." : "Save Settings"}
+                <button type="submit" disabled={savingSettings} className="w-full bg-[#3b82f6] hover:bg-[#2563eb] text-white font-bold py-2.5 rounded-lg mt-2 transition-colors disabled:opacity-50">
+                  {savingSettings ? "Saving..." : "Save Basic Settings"}
+                </button>
+              </form>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-[#10b981]">🎯</span> Overall Chapter Targets
+              </h2>
+              <form onSubmit={saveOverallTargets} className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Attendance (%)</label>
+                    <input type="number" name="attendanceTarget" value={chapterSettings.attendanceTarget || ''} placeholder="95" onChange={handleSettingsChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#10b981]" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">1-to-1s (Total)</label>
+                    <input type="number" name="overall1to1sTarget" value={chapterSettings.overall1to1sTarget || ''} placeholder="1700" onChange={handleSettingsChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#10b981]" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Referrals (Total)</label>
+                    <input type="number" name="overallReferralsTarget" value={chapterSettings.overallReferralsTarget || ''} placeholder="1700" onChange={handleSettingsChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#10b981]" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Visitors (Total)</label>
+                    <input type="number" name="overallVisitorsTarget" value={chapterSettings.overallVisitorsTarget || ''} placeholder="400" onChange={handleSettingsChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#10b981]" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">CEU (Total Hours)</label>
+                    <input type="number" name="overallCEUTarget" value={chapterSettings.overallCEUTarget || ''} placeholder="1700" onChange={handleSettingsChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#10b981]" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Sponsors (Total)</label>
+                    <input type="number" step="0.1" name="overallSponsorsTarget" value={chapterSettings.overallSponsorsTarget || ''} placeholder="68" onChange={handleSettingsChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#10b981]" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">TYFCB (Total)</label>
+                    <input type="number" name="overallTYFCBTarget" value={chapterSettings.overallTYFCBTarget || ''} placeholder="20000000" onChange={handleSettingsChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#10b981]" />
+                  </div>
+                </div>
+                <button type="submit" disabled={savingSettings} className="w-full bg-[#10b981] hover:bg-[#059669] text-white font-bold py-2.5 rounded-lg mt-2 transition-colors disabled:opacity-50">
+                  {savingSettings ? "Saving..." : "Save Overall Targets"}
+                </button>
+              </form>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-[#3b82f6]">📅</span> Monthly Chapter Targets
+              </h2>
+              <form onSubmit={saveMonthlyTargets} className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">1-to-1s (Total)</label>
+                    <input type="number" name="monthly1to1sTarget" value={chapterSettings.monthly1to1sTarget || ''} placeholder="272" onChange={handleSettingsChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#3b82f6]" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Referrals (Total)</label>
+                    <input type="number" name="monthlyReferralsTarget" value={chapterSettings.monthlyReferralsTarget || ''} placeholder="272" onChange={handleSettingsChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#3b82f6]" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Visitors (Total)</label>
+                    <input type="number" name="monthlyVisitorsTarget" value={chapterSettings.monthlyVisitorsTarget || ''} placeholder="68" onChange={handleSettingsChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#3b82f6]" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">CEU (Total Hours)</label>
+                    <input type="number" name="monthlyCEUTarget" value={chapterSettings.monthlyCEUTarget || ''} placeholder="272" onChange={handleSettingsChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#3b82f6]" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Sponsors (Total)</label>
+                    <input type="number" step="0.1" name="monthlySponsorsTarget" value={chapterSettings.monthlySponsorsTarget || ''} placeholder="13.6" onChange={handleSettingsChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#3b82f6]" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">TYFCB (Total)</label>
+                    <input type="number" name="monthlyTYFCBTarget" value={chapterSettings.monthlyTYFCBTarget || ''} placeholder="3400000" onChange={handleSettingsChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#3b82f6]" />
+                  </div>
+                </div>
+                <button type="submit" disabled={savingSettings} className="w-full bg-[#3b82f6] hover:bg-[#2563eb] text-white font-bold py-2.5 rounded-lg mt-2 transition-colors disabled:opacity-50">
+                  {savingSettings ? "Saving..." : "Save Monthly Targets"}
+                </button>
+              </form>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-[#8b5cf6]">👤</span> Individual Targets
+              </h2>
+              <form onSubmit={saveIndividualTargets} className="space-y-4">
+                <div className="grid grid-cols-1 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">1-to-1s</label>
+                    <input type="text" name="individual1to1sTarget" value={chapterSettings.individual1to1sTarget || ''} placeholder="1 per week" onChange={handleSettingsChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#8b5cf6]" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Referrals</label>
+                    <input type="text" name="individualReferralsTarget" value={chapterSettings.individualReferralsTarget || ''} placeholder="1 per week" onChange={handleSettingsChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#8b5cf6]" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Visitors</label>
+                    <input type="text" name="individualVisitorsTarget" value={chapterSettings.individualVisitorsTarget || ''} placeholder="1 per month" onChange={handleSettingsChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#8b5cf6]" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">CEU</label>
+                    <input type="text" name="individualCEUTarget" value={chapterSettings.individualCEUTarget || ''} placeholder="0.5 hour per week" onChange={handleSettingsChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#8b5cf6]" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">TYFCB</label>
+                    <input type="text" name="individualTYFCBTarget" value={chapterSettings.individualTYFCBTarget || ''} placeholder="10k+" onChange={handleSettingsChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#8b5cf6]" />
+                  </div>
+                </div>
+                <button type="submit" disabled={savingSettings} className="w-full bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold py-2.5 rounded-lg mt-2 transition-colors disabled:opacity-50">
+                  {savingSettings ? "Saving..." : "Save Individual Targets"}
                 </button>
               </form>
             </div>
@@ -319,15 +524,28 @@ export default function AdminDashboard() {
               <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="text-[#3b82f6]">📊</span> Upload Monthly Report
               </h2>
-              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center p-6 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
-                <input 
-                  type="file" 
-                  accept=".xlsx,.xls" 
-                  onChange={(e) => handleUpload(e, 'monthly')} 
-                  disabled={uploading}
-                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-[#3b82f6]/10 file:text-[#3b82f6] hover:file:bg-[#3b82f6]/20 transition-all cursor-pointer"
-                />
-                {uploading && <span className="text-sm font-bold text-[#3b82f6] animate-pulse">Processing...</span>}
+              <div className="flex flex-col gap-4 p-6 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
+                <div className="w-full">
+                  <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Month Name</label>
+                  <input 
+                    type="text" 
+                    value={monthlyMonthName}
+                    onChange={(e) => setMonthlyMonthName(e.target.value)}
+                    placeholder="e.g., April 2026" 
+                    className="w-full sm:w-1/2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#3b82f6]" 
+                  />
+                  <p className="text-[10px] text-gray-400 mt-1">Enter the month name before selecting the file (optional).</p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                  <input 
+                    type="file" 
+                    accept=".xlsx,.xls" 
+                    onChange={(e) => handleUpload(e, 'monthly')} 
+                    disabled={uploading}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-[#3b82f6]/10 file:text-[#3b82f6] hover:file:bg-[#3b82f6]/20 transition-all cursor-pointer"
+                  />
+                  {uploading && <span className="text-sm font-bold text-[#3b82f6] animate-pulse">Processing...</span>}
+                </div>
               </div>
               <p className="text-xs text-gray-400 font-medium mt-3">This will parse the Excel file, calculate scores, and update the database immediately.</p>
 

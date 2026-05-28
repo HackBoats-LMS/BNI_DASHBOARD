@@ -1,69 +1,74 @@
-export default function Recognition({ monthlyData, chapterData }: { monthlyData: any[], chapterData: any }) {
-  if (!monthlyData || monthlyData.length === 0) return null;
+export default function Recognition({ data, chapterData, title = "Recognition", subtitle }: { data: any[], chapterData: any, title?: string, subtitle?: string }) {
+  if (!data || data.length === 0) return null;
 
-  // Calculate most referrals
-  const sortedByReferrals = [...monthlyData].sort((a, b) => (b.referralsGiven || 0) - (a.referralsGiven || 0));
-  const mostReferralsMember = sortedByReferrals[0];
-  const mostReferrals = mostReferralsMember ? mostReferralsMember.fullName : "N/A";
-  const mostReferralsValue = mostReferralsMember ? mostReferralsMember.referralsGiven || 0 : "-";
+  // Calculate highest visitors
+  const sortedByVisitors = [...data].sort((a, b) => (b.visitors || 0) - (a.visitors || 0));
+  const highestVisitorsMember = sortedByVisitors[0];
+  const highestVisitors = highestVisitorsMember ? highestVisitorsMember.fullName : "N/A";
+  const highestVisitorsValue = highestVisitorsMember ? highestVisitorsMember.visitors || 0 : "-";
 
-  // Calculate best attendance
-  const sortedByAttendance = [...monthlyData].sort((a, b) => (b.attendancePercentage || 0) - (a.attendancePercentage || 0));
-  const bestAttendanceMember = sortedByAttendance[0];
-  const bestAttendance = bestAttendanceMember ? bestAttendanceMember.fullName : "N/A";
-  const bestAttendanceValue = bestAttendanceMember ? Math.round(bestAttendanceMember.attendancePercentage || 0) + "%" : "-";
+  // Calculate highest referrals (handle both referals and referralsGiven properties)
+  const sortedByReferrals = [...data].sort((a, b) => (b.referals || b.referralsGiven || 0) - (a.referals || a.referralsGiven || 0));
+  const highestReferralsMember = sortedByReferrals[0];
+  const highestReferrals = highestReferralsMember ? highestReferralsMember.fullName : "N/A";
+  const highestReferralsValue = highestReferralsMember ? (highestReferralsMember.referals || highestReferralsMember.referralsGiven || 0) : "-";
 
-  // Calculate most 1-to-1s
-  const sortedBy1to1s = [...monthlyData].sort((a, b) => (b.onetoone || 0) - (a.onetoone || 0));
-  const most1to1sMember = sortedBy1to1s[0];
-  const most1to1s = most1to1sMember ? most1to1sMember.fullName : "N/A";
-  const most1to1sValue = most1to1sMember ? most1to1sMember.onetoone || 0 : "-";
+  // Calculate highest tyfcb
+  const sortedByTYFCB = [...data].sort((a, b) => (b.TYFCB || 0) - (a.TYFCB || 0));
+  const highestTYFCBMember = sortedByTYFCB[0];
+  const highestTYFCB = highestTYFCBMember ? highestTYFCBMember.fullName : "N/A";
+  
+  const formatCurrency = (val: number) => {
+    if (val >= 10000000) return (val / 10000000).toFixed(2) + 'Cr';
+    if (val >= 100000) return (val / 100000).toFixed(2) + 'L';
+    if (val >= 1000) return (val / 1000).toFixed(1) + 'k';
+    return val.toFixed(0);
+  };
+  
+  const highestTYFCBValue = highestTYFCBMember ? formatCurrency(highestTYFCBMember.TYFCB || 0) : "-";
 
-  const monthYear = chapterData?.monthYear || "Current Period";
+  const periodSubtitle = subtitle || chapterData?.monthYear || "Current Period";
 
   return (
-    <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 mt-12 mb-4">
+    <div className="w-full">
       <div className="flex justify-between items-center mb-4">
         <div>
-          <h2 className="text-xl font-bold text-gray-900 tracking-tight">Recognition</h2>
-          <p className="text-sm text-gray-500 font-medium mt-0.5">Top performers this period &middot; {monthYear}</p>
+          <h2 className="text-xl font-bold text-gray-900 tracking-tight">{title}</h2>
+          <p className="text-sm text-gray-500 font-medium mt-0.5">Top performers &middot; {periodSubtitle}</p>
         </div>
-        <button className="text-gray-400 hover:text-gray-600">
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
-        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white rounded-[14px] p-5 shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
-          <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center text-[#b90000] shrink-0 border border-red-100">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
+          <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-[#3b82f6] shrink-0 border border-blue-100">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
           </div>
           <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Most Referrals Given</p>
-            <p className="text-[17px] font-extrabold text-gray-900 leading-tight">{mostReferrals}</p>
-            <p className="text-sm text-gray-500 font-medium">{mostReferralsValue}</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Highest Visitors</p>
+            <p className="text-[17px] font-extrabold text-gray-900 leading-tight">{highestVisitors}</p>
+            <p className="text-sm text-gray-500 font-medium">{highestVisitorsValue}</p>
           </div>
         </div>
 
         <div className="bg-white rounded-[14px] p-5 shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
-          <div className="w-12 h-12 rounded-full bg-orange-50 flex items-center justify-center text-[#f59e0b] shrink-0 border border-orange-100">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
+          <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center text-[#10b981] shrink-0 border border-green-100">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="7.5" cy="7" r="4" /><line x1="14" y1="11" x2="22" y2="11" /><polyline points="19 8 22 11 19 14" /></svg>
           </div>
           <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Best Attendance</p>
-            <p className="text-[17px] font-extrabold text-gray-900 leading-tight">{bestAttendance}</p>
-            <p className="text-sm text-gray-500 font-medium">{bestAttendanceValue}</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Highest Referrals</p>
+            <p className="text-[17px] font-extrabold text-gray-900 leading-tight">{highestReferrals}</p>
+            <p className="text-sm text-gray-500 font-medium">{highestReferralsValue}</p>
           </div>
         </div>
 
         <div className="bg-white rounded-[14px] p-5 shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
-          <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center text-[#b90000] shrink-0 border border-red-100">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+          <div className="w-12 h-12 rounded-full bg-purple-50 flex items-center justify-center text-[#8b5cf6] shrink-0 border border-purple-100">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
           </div>
           <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Most 1-to-1 Meetings</p>
-            <p className="text-[17px] font-extrabold text-gray-900 leading-tight">{most1to1s}</p>
-            <p className="text-sm text-gray-500 font-medium">{most1to1sValue}</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Highest TYFCB</p>
+            <p className="text-[17px] font-extrabold text-gray-900 leading-tight">{highestTYFCB}</p>
+            <p className="text-sm text-gray-500 font-medium">{highestTYFCBValue}</p>
           </div>
         </div>
       </div>

@@ -67,6 +67,8 @@ const getCachedData = async (type: string = 'overall') => {
   )();
 };
 
+export const dynamic = 'force-static';
+
 export default async function Home() {
   const data = await getCachedData('overall');
   const monthlyData = await getCachedData('monthly');
@@ -78,15 +80,36 @@ export default async function Home() {
       <div className="w-full max-w-[1400px] mx-auto p-4 sm:p-6 lg:p-8 font-sans pb-0">
         <DashboardHeader data={data} chapterData={chapterData} />
         <ChapterScorecard data={data} chapterData={chapterData} />
-        {monthlyData && monthlyData.length > 0 && (
-          <div className="mt-8 pt-6 border-t border-gray-200">
-            <MonthlyScorecard data={monthlyData} chapterData={chapterData} title="Monthly Scorecard" />
-          </div>
-        )}
+        {monthlyData && monthlyData.length > 0 && (() => {
+          const uploadDate = new Date(monthlyData[0].createdAt);
+          const formattedMonth = chapterData?.monthlyMonthYear || uploadDate.toLocaleString('default', { month: 'short', year: 'numeric' });
+          return (
+            <div className="mt-8 pt-6 border-t border-gray-200">
+              <MonthlyScorecard data={monthlyData} chapterData={chapterData} title={`Monthly Scorecard (${formattedMonth})`} />
+            </div>
+          );
+        })()}
         <OverallReport data={data} chapterData={chapterData} />
       </div>
       <Table initialData={data} chapterData={chapterData} />
-      <Recognition monthlyData={monthlyData} chapterData={chapterData} />
+      
+      {/* Recognition Section */}
+      <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 mt-12 mb-4">
+        <h2 className="text-xl font-bold text-gray-900 tracking-tight mb-2">Recognition Boards</h2>
+        <div className="space-y-8">
+          <Recognition data={data} chapterData={chapterData} title="Overall Top Performers" subtitle={chapterData?.monthYear || "6-Month Period"} />
+          
+          {monthlyData && monthlyData.length > 0 && (() => {
+            const uploadDate = new Date(monthlyData[0].createdAt);
+            const formattedMonth = chapterData?.monthlyMonthYear || uploadDate.toLocaleString('default', { month: 'short', year: 'numeric' });
+            return (
+              <div className="border-t border-gray-100 pt-8">
+                <Recognition data={monthlyData} chapterData={chapterData} title="Monthly Top Performers" subtitle={formattedMonth} />
+              </div>
+            );
+          })()}
+        </div>
+      </div>
       <ScoringParameters />
     </main>
   );
