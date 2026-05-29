@@ -2,7 +2,7 @@ import React from 'react'
 
 const Navbar = ({ chapterData }: { chapterData?: any }) => {
     return (
-        <div className='w-full border-b border-emerald-100 bg-white px-4 py-3 sm:px-6 md:px-10 lg:px-20'>
+        <div className='w-full border-b border-emerald-100 bg-[#ffffff] px-4 py-3 sm:px-6 md:px-10 lg:px-20'>
 
             <div className='flex items-center justify-between gap-4'>
 

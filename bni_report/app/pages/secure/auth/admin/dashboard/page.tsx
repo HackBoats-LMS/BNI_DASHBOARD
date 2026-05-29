@@ -30,6 +30,7 @@ export default function AdminDashboard() {
   });
   const [savingSettings, setSavingSettings] = useState(false);
   const [monthlyMonthName, setMonthlyMonthName] = useState("");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     // Basic auth check
@@ -38,6 +39,8 @@ export default function AdminDashboard() {
       router.push("/pages/secure/auth/admin/login");
       return;
     }
+
+    setIsAuthenticated(true);
 
     // Fetch existing data from DB
     fetch(`/api/data?type=${previewType}`)
@@ -72,7 +75,15 @@ export default function AdminDashboard() {
     // Fetch batches
     loadBatches();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router]);
+  }, [router, previewType]);
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#10b981]"></div>
+      </div>
+    );
+  }
 
   async function loadBatches() {
     try {

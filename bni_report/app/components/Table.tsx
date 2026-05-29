@@ -78,15 +78,39 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
   const handleDownload = async () => {
     if (!tableRef.current) return;
     setDownloading(true);
-    
-    // Yield to the browser so it can instantly paint the "Downloading..." state
+
+    // Yield to let the "Downloading..." state render
     await new Promise(resolve => setTimeout(resolve, 50));
+
+    // Clone the table into an off-screen wrapper to avoid visual layout shifts
+    const cloneWrapper = document.createElement('div');
+    cloneWrapper.style.position = 'absolute';
+    cloneWrapper.style.top = '-10000px';
+    cloneWrapper.style.left = '-10000px';
+    cloneWrapper.style.width = '1400px';
+    cloneWrapper.style.zIndex = '-1';
     
+    const clonedTable = tableRef.current.cloneNode(true) as HTMLElement;
+    clonedTable.style.width = '1400px';
+    clonedTable.style.minWidth = '1400px';
+    
+    // Ensure hidden columns are visible in the PDF clone
+    const hiddenCells = clonedTable.querySelectorAll('.md\\:table-cell');
+    hiddenCells.forEach(cell => {
+      cell.classList.remove('hidden', 'md:table-cell');
+    });
+    
+    cloneWrapper.appendChild(clonedTable);
+    document.body.appendChild(cloneWrapper);
+
+    // Yield to the browser so it can apply the new layout to the clone
+    await new Promise(resolve => setTimeout(resolve, 100));
+
     try {
-      const dataUrl = await htmlToImage.toJpeg(tableRef.current, {
+      const dataUrl = await htmlToImage.toJpeg(clonedTable, {
         backgroundColor: '#ffffff',
-        pixelRatio: 1.5,
-        quality: 0.85,
+        pixelRatio: 10, // 3x resolution to make the table look as sharp as the vector text
+        quality: 1.00, // Stronger JPEG compression to keep the 3x resolution file size under control
         filter: (node) => {
           const el = node as HTMLElement;
           return !(el.classList && el.classList.contains('hide-in-pdf'));
@@ -94,7 +118,7 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
       });
 
       const { jsPDF } = await import('jspdf');
-      
+
       const imgProps = new Image();
       imgProps.src = dataUrl;
       await new Promise((resolve) => { imgProps.onload = resolve; });
@@ -120,11 +144,19 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
         await new Promise((resolve) => { hbImgProps.onload = resolve; });
       }
 
-      // Create a custom page size that fits the entire table + padding
+      const pdfLogicalWidth = 1400;
+      const captureRatio = imgProps.width / pdfLogicalWidth;
+      const pdfLogicalHeight = imgProps.height / captureRatio;
+
+      const padding = 40;
+      const topOffset = 220; // Reduced top offset since fonts are smaller
+      const bottomOffset = 180; // Reduced bottom offset
+
+      // Create a custom page size based on logical units to prevent PDF spec maximum-height clipping
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'px',
-        format: [imgProps.width + 80, imgProps.height + 560]
+        format: [pdfLogicalWidth + (padding * 2), pdfLogicalHeight + topOffset + bottomOffset]
       });
 
       const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -135,38 +167,37 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
       pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
 
       // Add ImpactSync logo text at top left
-      pdf.setFontSize(108);
+      pdf.setFontSize(72);
       pdf.setFont("helvetica", "bold");
       pdf.setTextColor(6, 78, 59); // emerald-900
-      pdf.text("Impact", 40, 160);
+      pdf.text("Impact", padding, 120);
       const impactWidth = pdf.getTextWidth("Impact");
       pdf.setTextColor(5, 150, 105); // emerald-600
-      pdf.text("Sync", 40 + impactWidth, 160);
+      pdf.text("Sync", padding + impactWidth, 120);
 
       // Add Chapter Scoreboard title
-      pdf.setFontSize(48);
+      pdf.setFontSize(36);
       pdf.setTextColor(17, 24, 39); // gray-900
-      pdf.text(`${chapterName} Scoreboard`, 40, 240);
+      pdf.text(`${chapterName} Scoreboard`, padding, 175);
 
-      // Add Table image (Using JPEG for massive size reduction)
-      pdf.addImage(dataUrl, 'JPEG', 40, 300, imgProps.width, imgProps.height);
+      // Draw the super high-res image into the logical bounds
+      pdf.addImage(dataUrl, 'JPEG', padding, topOffset, pdfLogicalWidth, pdfLogicalHeight);
 
       // Add powered by hackboats at bottom right
-      pdf.setFontSize(36);
+      pdf.setFontSize(28);
       pdf.setFont("helvetica", "bold");
       pdf.setTextColor(107, 114, 128); // gray-500
       const poweredByText = "powered by";
       const pbWidth = pdf.getTextWidth(poweredByText);
 
       if (hbImgProps && hbDataUrl) {
-        const hbHeight = 100; 
+        const hbHeight = 65; // Smaller logo
         const hbWidth = (hbImgProps.width * hbHeight) / hbImgProps.height;
-        
-        // Stack them vertically, left-aligned with each other, but the whole block right-aligned to the page
-        const blockLeft = pdfWidth - 40 - Math.max(hbWidth, pbWidth);
-        
-        pdf.text(poweredByText, blockLeft, pdfHeight - 200); 
-        pdf.addImage(hbDataUrl, 'PNG', blockLeft, pdfHeight - 180, hbWidth, hbHeight);
+
+        const blockLeft = pdfWidth - padding - Math.max(hbWidth, pbWidth);
+
+        pdf.text(poweredByText, blockLeft, pdfHeight - 120);
+        pdf.addImage(hbDataUrl, 'PNG', blockLeft, pdfHeight - 105, hbWidth, hbHeight);
       } else {
         pdf.text("powered by hackboats", pdfWidth - 300, pdfHeight - 100);
       }
@@ -176,6 +207,10 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
       console.error('Error generating PDF:', error);
       alert('Failed to download PDF.');
     } finally {
+      // Clean up the off-screen clone
+      if (document.body.contains(cloneWrapper)) {
+        document.body.removeChild(cloneWrapper);
+      }
       setDownloading(false);
     }
   };
@@ -236,7 +271,7 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
               <button
                 onClick={handleDownload}
                 disabled={downloading}
-                className="hidden sm:flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 border border-gray-200 rounded-full text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-wait"
+                className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 border border-gray-200 rounded-full text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-wait"
               >
                 {downloading ? (
                   <span className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-gray-300 border-t-gray-700 rounded-full animate-spin"></span>
@@ -271,15 +306,15 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
             <tbody className="divide-y divide-gray-50/80">
               {data.map((item: any, index: number) => (
                 <tr key={index} onClick={() => setSelectedMember(item)} className="hover:bg-gray-50/50 transition-colors group cursor-pointer">
-                  <td className="py-3 px-6">
-                    <div className="flex items-center gap-4">
-                      <span className="text-gray-300 text-xs font-medium w-4 text-right">{index + 1}</span>
-                      <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs tracking-wide ${getBandBgLight(item.band)} ${getBandTextColor(item.band)}`}>
+                  <td className="py-3 px-4 sm:px-6">
+                    <div className="flex items-start sm:items-center gap-3 sm:gap-4">
+                      <span className="text-gray-300 text-xs font-medium w-3 sm:w-4 text-right shrink-0 mt-2 sm:mt-0">{index + 1}</span>
+                      <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-bold text-[10px] sm:text-xs tracking-wide shrink-0 mt-0.5 sm:mt-0 ${getBandBgLight(item.band)} ${getBandTextColor(item.band)}`}>
                         {getInitials(item.fullName)}
                       </div>
-                      <div>
-                        <p className="text-sm font-bold text-gray-900">{item.fullName}</p>
-                        <p className="text-[11px] text-gray-400">Chapter Member</p>
+                      <div className="flex-1 min-w-0 max-w-[180px] sm:max-w-none">
+                        <p className="text-sm font-bold text-gray-900 break-words leading-snug">{item.fullName}</p>
+                        <p className="text-[11px] text-gray-400 mt-0.5">Chapter Member</p>
                       </div>
                     </div>
                   </td>

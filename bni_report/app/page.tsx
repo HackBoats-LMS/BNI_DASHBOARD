@@ -39,7 +39,7 @@ const getCachedData = async (type: string = 'overall') => {
       try {
         await connectDB();
         const Model = type === 'monthly' ? MonthlyReport : MemberReport;
-        const query = type === 'overall' 
+        const query = type === 'overall'
           ? { $or: [{ reportType: 'overall' }, { reportType: { $exists: false } }] }
           : { reportType: type };
 
@@ -75,41 +75,26 @@ export default async function Home() {
   const chapterData = await getCachedChapterSettings();
 
   return (
-    <main className="min-h-screen bg-[#f9fafb] overflow-x-hidden">
+    <main className="min-h-screen bg-[#EEF4F6] overflow-x-hidden">
       <Navbar chapterData={chapterData} />
       <div className="w-full max-w-[1400px] mx-auto p-4 sm:p-6 lg:p-8 font-sans pb-0">
         <DashboardHeader data={data} chapterData={chapterData} />
-        <ChapterScorecard data={data} chapterData={chapterData} />
-        {monthlyData && monthlyData.length > 0 && (() => {
-          const uploadDate = new Date(monthlyData[0].createdAt);
-          const formattedMonth = chapterData?.monthlyMonthYear || uploadDate.toLocaleString('default', { month: 'short', year: 'numeric' });
-          return (
-            <div className="mt-8 pt-6 border-t border-gray-200">
-              <MonthlyScorecard data={monthlyData} chapterData={chapterData} title={`Monthly Scorecard (${formattedMonth})`} />
-            </div>
-          );
-        })()}
-        <OverallReport data={data} chapterData={chapterData} />
-      </div>
-      <Table initialData={data} chapterData={chapterData} />
-      
-      {/* Recognition Section */}
-      <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 mt-12 mb-4">
-        <h2 className="text-xl font-bold text-gray-900 tracking-tight mb-2">Recognition Boards</h2>
-        <div className="space-y-8">
-          <Recognition data={data} chapterData={chapterData} title="Overall Top Performers" subtitle={chapterData?.monthYear || "6-Month Period"} />
-          
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 items-stretch">
+          <ChapterScorecard data={data} chapterData={chapterData} />
           {monthlyData && monthlyData.length > 0 && (() => {
             const uploadDate = new Date(monthlyData[0].createdAt);
             const formattedMonth = chapterData?.monthlyMonthYear || uploadDate.toLocaleString('default', { month: 'short', year: 'numeric' });
             return (
-              <div className="border-t border-gray-100 pt-8">
-                <Recognition data={monthlyData} chapterData={chapterData} title="Monthly Top Performers" subtitle={formattedMonth} />
-              </div>
+              <MonthlyScorecard data={monthlyData} chapterData={chapterData} title={`Monthly Scorecard (${formattedMonth})`} />
             );
           })()}
         </div>
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8 items-stretch">
+          <OverallReport data={data} chapterData={chapterData} />
+          <Recognition data={data} monthlyData={monthlyData || []} chapterData={chapterData} />
+        </div>
       </div>
+      <Table initialData={data} chapterData={chapterData} />
       <ScoringParameters />
     </main>
   );
