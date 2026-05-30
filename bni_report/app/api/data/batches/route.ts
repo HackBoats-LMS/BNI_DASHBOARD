@@ -1,16 +1,20 @@
 import { connectDB } from "@/lib/db";
 import MemberReport from "@/models/memberReport";
+import MonthlyReport from "@/models/monthlyReport";
+import HistoricalReport from "@/models/historicalReport";
+import ComparisonReport from "@/models/comparisonReport";
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-
-import MonthlyReport from "@/models/monthlyReport";
 
 export async function GET(req: Request) {
   try {
     await connectDB();
     const url = new URL(req.url);
     const type = url.searchParams.get("type");
-    const Model = type === 'monthly' ? MonthlyReport : MemberReport;
+    let Model: any = MemberReport;
+    if (type === 'monthly') Model = MonthlyReport;
+    if (type === 'historical') Model = HistoricalReport;
+    if (type === 'comparison') Model = ComparisonReport;
 
     const batches = await Model.aggregate([
       {
@@ -18,7 +22,7 @@ export async function GET(req: Request) {
           _id: "$uploadBatchId",
           count: { $sum: 1 },
           createdAt: { $first: "$createdAt" },
-          reportType: { $first: { $ifNull: ["$reportType", type === 'monthly' ? "monthly" : "overall"] } }
+          reportType: { $first: { $ifNull: ["$reportType", type || "overall"] } }
         }
       },
       { $sort: { createdAt: -1 } }
@@ -35,7 +39,10 @@ export async function DELETE(req: Request) {
     const url = new URL(req.url);
     const batchId = url.searchParams.get("batchId");
     const type = url.searchParams.get("type");
-    const Model = type === 'monthly' ? MonthlyReport : MemberReport;
+    let Model: any = MemberReport;
+    if (type === 'monthly') Model = MonthlyReport;
+    if (type === 'historical') Model = HistoricalReport;
+    if (type === 'comparison') Model = ComparisonReport;
     
     if (!batchId) {
        return NextResponse.json({ success: false, msg: "No batch ID provided" }, { status: 400 });

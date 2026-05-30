@@ -5,6 +5,8 @@ const chapterSettingsSchema = new mongoose.Schema({
   monthYear: { type: String, default: "Jan – May 2025" },
   meetingsCount: { type: String, default: "23" },
   monthlyMonthYear: { type: String, default: "" },
+  historicalMonthYear: { type: String, default: "" },
+  comparisonMonthYear: { type: String, default: "" },
   
   // Overall targets
   attendanceTarget: { type: Number, default: 95 },

@@ -1,8 +1,7 @@
-
 import * as XLSX from "xlsx";
-import { transformMemeber } from "./functions";
+import { transformMemeber } from "../convert/functions";
 import { connectDB } from "@/lib/db";
-import MemberReport from "@/models/memberReport";
+import ComparisonReport from "@/models/comparisonReport";
 import { revalidatePath, revalidateTag } from "next/cache";
 
 export async function POST(req: Request) {
@@ -10,7 +9,7 @@ export async function POST(req: Request) {
         await connectDB();
         const formData = await req.formData();
         const file = formData.get("file");
-        const reportType = formData.get("reportType") || "overall";
+        const comparisonMonthName = formData.get("comparisonMonthName");
 
         if (!file || !(file instanceof File)) {
             return Response.json(
@@ -58,7 +57,6 @@ export async function POST(req: Request) {
             data.push(rowData);
         }
 
-        // Remove 'Total', 'BNI', and 'Visitors' rows
         const filteredData = data.filter((row: any) => {
             const firstName = row["First Name"]?.toString().trim().toLowerCase() || "";
             const lastName = row["Last Name"]?.toString().trim().toLowerCase() || "";
@@ -72,12 +70,25 @@ export async function POST(req: Request) {
         const new_data = filteredData.map((row: any) => ({
             ...transformMemeber(row),
             uploadBatchId: batchId,
-            reportType
+            reportType: "comparison"
         }));
-        await MemberReport.insertMany(new_data);
+        
+        await ComparisonReport.insertMany(new_data);
+
+        if (comparisonMonthName && typeof comparisonMonthName === 'string') {
+            const ChapterSettings = (await import("@/models/chapterSettings")).default;
+            await ChapterSettings.findOneAndUpdate(
+                {},
+                { $set: { comparisonMonthYear: comparisonMonthName } },
+                { upsert: true, sort: { createdAt: -1 } }
+            );
+        }
+
         revalidatePath("/", "page");
         // @ts-ignore
         revalidateTag("excel-data");
+        // @ts-ignore
+        revalidateTag("chapter-settings");
 
         return Response.json({ success: true, data: new_data });
 

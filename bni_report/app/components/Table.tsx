@@ -4,7 +4,7 @@ import React, { useState, useRef } from 'react';
 import MemberModal from './MemberModal';
 import * as htmlToImage from 'html-to-image';
 
-export default function Table({ initialData = [], chapterData }: { initialData: any[], chapterData?: any }) {
+export default function Table({ initialData = [], comparisonData = [], chapterData }: { initialData: any[], comparisonData?: any[], chapterData?: any }) {
   const chapterName = chapterData?.chapterName || "Infinity Chapter";
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'score' | 'name'>('score');
@@ -56,6 +56,15 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
       case 'AMBER': return 'bg-[#f59e0b]/10';
       case 'RED': return 'bg-[#ef4444]/10';
       default: return 'bg-[#9ca3af]/10';
+    }
+  };
+
+  const getBandBorderColor = (band: string) => {
+    switch (band?.toUpperCase()) {
+      case 'GREEN': return 'border-b-[#10b981]/30';
+      case 'AMBER': return 'border-b-[#f59e0b]/30';
+      case 'RED': return 'border-b-[#ef4444]/30';
+      default: return 'border-b-gray-100';
     }
   };
 
@@ -137,7 +146,7 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
         console.error("Failed to load HB logo", err);
       }
 
-      let hbImgProps = null;
+      let hbImgProps:any = null;
       if (hbDataUrl) {
         hbImgProps = new Image();
         hbImgProps.src = hbDataUrl;
@@ -303,9 +312,9 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
                 <th className="py-4 px-6 text-right hide-in-pdf"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50/80">
+            <tbody className="">
               {data.map((item: any, index: number) => (
-                <tr key={index} onClick={() => setSelectedMember(item)} className="hover:bg-gray-50/50 transition-colors group cursor-pointer">
+                <tr key={index} onClick={() => setSelectedMember(item)} className={`hover:bg-gray-50/50 transition-colors group cursor-pointer border-b-[3px] ${getBandBorderColor(item.band)}`}>
                   <td className="py-3 px-4 sm:px-6">
                     <div className="flex items-start sm:items-center gap-3 sm:gap-4">
                       <span className="text-gray-300 text-xs font-medium w-3 sm:w-4 text-right shrink-0 mt-2 sm:mt-0">{index + 1}</span>
@@ -431,7 +440,7 @@ export default function Table({ initialData = [], chapterData }: { initialData: 
 
       {/* Modal */}
       {selectedMember && (
-        <MemberModal member={selectedMember} onClose={() => setSelectedMember(null)} chapterData={chapterData} />
+        <MemberModal member={selectedMember} comparisonData={comparisonData} onClose={() => setSelectedMember(null)} chapterData={chapterData} />
       )}
     </div>
   );

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 
-export default function MemberModal({ member, onClose, chapterData }: { member: any, onClose: () => void, chapterData?: any }) {
+export default function MemberModal({ member, comparisonData = [], onClose, chapterData }: { member: any, comparisonData?: any[], onClose: () => void, chapterData?: any }) {
   // Prevent scrolling when modal is open
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -16,14 +16,30 @@ export default function MemberModal({ member, onClose, chapterData }: { member: 
   const tVisitors = chapterData?.individualVisitorsTarget || '1 per month';
   const tCEU = chapterData?.individualCEUTarget || '0.5 hour per week';
   const tTYFCB = chapterData?.individualTYFCBTarget || '10k+';
+  const comparisonMember = comparisonData?.find((h: any) => h.fullName === member.fullName);
+
+  const getComparisonPoints = (key: string) => {
+    if (!comparisonMember) return null;
+    switch (key) {
+      case 'attendance': return comparisonMember.attendancePoints;
+      case 'sponsor': return comparisonMember.sponsorPoints;
+      case 'onetoone': return comparisonMember.onetoonePoints;
+      case 'referals': return comparisonMember.referalPoints;
+      case 'visitors': return comparisonMember.visitorsPoints;
+      case 'tyfcb': return comparisonMember.TYFCBPoints;
+      case 'ceu': return comparisonMember.CEUPoints;
+      default: return null;
+    }
+  };
+
   const metricsInfo = [
-    { key: 'attendance', label: 'Attendance', value: member.attendancePercentage !== undefined ? Math.round(member.attendancePercentage) + '%' : '0%', target: '95%', points: member.attendancePoints, max: 10, action: { green: "Flawless attendance! Your consistency builds trust and visibility.", amber: "Your visibility is dropping. Plan ahead and use substitutes if you must be absent.", red: "Critical! Missing meetings hurts your credibility. Commit to showing up every week." } },
-    { key: 'sponsor', label: 'Sponsor', value: member.sponsorPoints ? (member.sponsorPoints / 5).toFixed(2) : "0.00", target: '1 per 6 months', points: member.sponsorPoints, max: 5, action: { green: "Outstanding leadership! You're actively expanding our chapter's network.", amber: "Think of your best clients or partners. Invite them to visit and experience the value.", red: "Start small: aim to bring just one visitor this month who could benefit from our group." } },
-    { key: 'onetoone', label: '1-to-1s', value: member.onetoone !== undefined ? member.onetoone.toFixed(2) : "0.00", target: t1to1s, points: member.onetoonePoints, max: 20, action: { green: "Superb networking! You are actively discovering how to help others.", amber: "Try to book at least one 1-to-1 per week with someone you haven't spoken to recently.", red: "You're missing out on referrals! Reach out to a member today and schedule a quick coffee chat." } },
-    { key: 'referals', label: 'Referrals', value: member.referals !== undefined ? member.referals.toFixed(2) : "0.00", target: tReferrals, points: member.referalPoints, max: 25, action: { green: "True 'Givers Gain' mentality! Your referrals directly drive our chapter's success.", amber: "Pay close attention to members' weekly asks. Actively look for opportunities in your daily conversations.", red: "Review the roster today. Ask yourself, 'Who do I know that needs their services?' and make an introduction." } },
-    { key: 'visitors', label: 'Visitors', value: member.visitors !== undefined ? Number(member.visitors).toFixed(2) : "0.00", target: tVisitors, points: member.visitorsPoints, max: 25, action: { green: "Fantastic work! Visitors bring fresh energy and new business to everyone.", amber: "Make it a habit to invite one client, friend, or vendor to our next open meeting.", red: "Your network is valuable. Use the BNI Connect app to easily invite a contact to our next meeting." } },
-    { key: 'tyfcb', label: 'TYFCB', value: (member.TYFCB || 0) >= 10000000 ? ((member.TYFCB || 0) / 10000000).toFixed(2) + 'Cr' : ((member.TYFCB || 0) >= 100000 ? ((member.TYFCB || 0) / 100000).toFixed(2) + 'L' : ((member.TYFCB || 0) >= 1000 ? ((member.TYFCB || 0) / 1000).toFixed(2) + 'k' : Number(member.TYFCB || 0).toFixed(2))), target: tTYFCB, points: member.TYFCBPoints, max: 5, action: { green: "Incredible ROI! You are successfully converting referrals into real revenue.", amber: "Don't leave money unacknowledged! Ensure you log all closed business from chapter referrals.", red: "Follow up on the referrals you've received. Close the loop and record your TYFCB to show appreciation." } },
-    { key: 'ceu', label: 'CEU', value: member.CEU !== undefined ? member.CEU.toFixed(2) : "0.00", target: tCEU, points: member.CEUPoints, max: 10, action: { green: "Lifelong learner! Your dedication to BNI education sets a great example.", amber: "Invest in your growth. Listen to a BNI podcast episode or read an article this week.", red: "Log into BNI Business Builder for 15 minutes today. A quick course can boost your networking skills." } },
+    { key: 'attendance', label: 'Attendance', value: member.attendancePercentage !== undefined ? Math.round(member.attendancePercentage) + '%' : '0%', target: '95%', points: member.attendancePoints, comparisonPoints: getComparisonPoints('attendance'), max: 10, action: { green: "Flawless attendance! Your consistency builds trust and visibility.", amber: "Your visibility is dropping. Plan ahead and use substitutes if you must be absent.", red: "Critical! Missing meetings hurts your credibility. Commit to showing up every week." } },
+    { key: 'sponsor', label: 'Sponsor', value: member.sponsorPoints ? (member.sponsorPoints / 5).toFixed(2) : "0.00", target: '1 per 6 months', points: member.sponsorPoints, comparisonPoints: getComparisonPoints('sponsor'), max: 5, action: { green: "Outstanding leadership! You're actively expanding our chapter's network.", amber: "Think of your best clients or partners. Invite them to visit and experience the value.", red: "Start small: aim to bring just one visitor this month who could benefit from our group." } },
+    { key: 'onetoone', label: '1-to-1s', value: member.onetoone !== undefined ? member.onetoone.toFixed(2) : "0.00", target: t1to1s, points: member.onetoonePoints, comparisonPoints: getComparisonPoints('onetoone'), max: 20, action: { green: "Superb networking! You are actively discovering how to help others.", amber: "Try to book at least one 1-to-1 per week with someone you haven't spoken to recently.", red: "You're missing out on referrals! Reach out to a member today and schedule a quick coffee chat." } },
+    { key: 'referals', label: 'Referrals', value: member.referals !== undefined ? member.referals.toFixed(2) : "0.00", target: tReferrals, points: member.referalPoints, comparisonPoints: getComparisonPoints('referals'), max: 25, action: { green: "True 'Givers Gain' mentality! Your referrals directly drive our chapter's success.", amber: "Pay close attention to members' weekly asks. Actively look for opportunities in your daily conversations.", red: "Review the roster today. Ask yourself, 'Who do I know that needs their services?' and make an introduction." } },
+    { key: 'visitors', label: 'Visitors', value: member.visitors !== undefined ? Number(member.visitors).toFixed(2) : "0.00", target: tVisitors, points: member.visitorsPoints, comparisonPoints: getComparisonPoints('visitors'), max: 25, action: { green: "Fantastic work! Visitors bring fresh energy and new business to everyone.", amber: "Make it a habit to invite one client, friend, or vendor to our next open meeting.", red: "Your network is valuable. Use the BNI Connect app to easily invite a contact to our next meeting." } },
+    { key: 'tyfcb', label: 'TYFCB', value: (member.TYFCB || 0) >= 10000000 ? ((member.TYFCB || 0) / 10000000).toFixed(2) + 'Cr' : ((member.TYFCB || 0) >= 100000 ? ((member.TYFCB || 0) / 100000).toFixed(2) + 'L' : ((member.TYFCB || 0) >= 1000 ? ((member.TYFCB || 0) / 1000).toFixed(2) + 'k' : Number(member.TYFCB || 0).toFixed(2))), target: tTYFCB, points: member.TYFCBPoints, comparisonPoints: getComparisonPoints('tyfcb'), max: 5, action: { green: "Incredible ROI! You are successfully converting referrals into real revenue.", amber: "Don't leave money unacknowledged! Ensure you log all closed business from chapter referrals.", red: "Follow up on the referrals you've received. Close the loop and record your TYFCB to show appreciation." } },
+    { key: 'ceu', label: 'CEU', value: member.CEU !== undefined ? member.CEU.toFixed(2) : "0.00", target: tCEU, points: member.CEUPoints, comparisonPoints: getComparisonPoints('ceu'), max: 10, action: { green: "Lifelong learner! Your dedication to BNI education sets a great example.", amber: "Invest in your growth. Listen to a BNI podcast episode or read an article this week.", red: "Log into BNI Business Builder for 15 minutes today. A quick course can boost your networking skills." } },
   ];
 
   const getMetricStatus = (points: number, max: number) => {
@@ -127,7 +143,9 @@ export default function MemberModal({ member, onClose, chapterData }: { member: 
           <div className="mb-10">
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Metric Breakdown</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
-              {metrics.map((m, i) => (
+              {metrics.map((m, i) => {
+                const diff = m.comparisonPoints !== null ? (m.points || 0) - m.comparisonPoints : null;
+                return (
                 <div key={i} className={`bg-white rounded-xl p-4 border flex flex-col justify-between ${getStatusColor(m.status, 'border')} shadow-sm hover:shadow-md transition-shadow`}>
                   <div>
                     <div className="mb-3">
@@ -144,11 +162,16 @@ export default function MemberModal({ member, onClose, chapterData }: { member: 
                       {m.value}
                     </span>
                   </div>
-                  <div className="mt-3 pt-3 border-t border-gray-50">
+                  <div className="mt-3 pt-3 border-t border-gray-50 flex justify-between items-center">
                     <p className="text-[10px] font-semibold text-gray-400">Target: {m.target}</p>
+                    {diff !== null && (
+                      <p className={`text-[10px] font-bold flex items-center gap-0.5 ${diff > 0 ? 'text-[#10b981]' : diff < 0 ? 'text-[#ef4444]' : 'text-gray-300'}`} title={`vs ${chapterData?.comparisonMonthYear || 'Comparison Period'}`}>
+                        {diff > 0 ? '▲' : diff < 0 ? '▼' : '—'} {Math.abs(diff)}
+                      </p>
+                    )}
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
           </div>
 
@@ -184,12 +207,19 @@ export default function MemberModal({ member, onClose, chapterData }: { member: 
                       <svg className="w-3.5 h-3.5 text-[#10b981]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                     </h5>
                     <div className="flex flex-wrap gap-2">
-                      {metrics.filter(m => m.status === 'green').map((m, i) => (
+                      {metrics.filter(m => m.status === 'green').map((m, i) => {
+                        const diff = m.comparisonPoints !== null ? (m.points || 0) - m.comparisonPoints : null;
+                        return (
                         <div key={i} className="px-3 py-1.5 rounded-full bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/20 text-[11px] sm:text-xs font-bold flex items-center gap-1.5">
                           <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                           {m.label}
+                          {diff !== null && diff !== 0 && (
+                            <span className={`text-[10px] ml-0.5 ${diff > 0 ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
+                              {diff > 0 ? '▲' : '▼'} {Math.abs(diff)}
+                            </span>
+                          )}
                         </div>
-                      ))}
+                      )})}
                     </div>
                   </div>
                 )}
@@ -202,22 +232,28 @@ export default function MemberModal({ member, onClose, chapterData }: { member: 
                       <span className="text-lg sm:text-xl leading-none mb-0.5">🚀</span>
                     </h5>
                     <div className="bg-gray-50 rounded-xl border border-gray-100 divide-y divide-gray-100/80">
-                      {metrics.filter(m => m.status !== 'green').map((m, i) => (
+                      {metrics.filter(m => m.status !== 'green').map((m, i) => {
+                        const diff = m.comparisonPoints !== null ? (m.points || 0) - m.comparisonPoints : null;
+                        return (
                         <div key={i} className="p-3 sm:p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
                           <div className="flex items-center gap-3 w-full sm:w-1/3">
                             <span className="text-gray-300">
                               <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                             </span>
-                            <span className="font-bold text-gray-700 text-sm">{m.label}</span>
+                            <span className="font-bold text-gray-700 text-sm flex items-center gap-2">
+                              {m.label}
+                              {diff !== null && diff !== 0 && (
+                                <span className={`text-[10px] ${diff > 0 ? 'text-[#10b981]' : 'text-[#ef4444]'}`} title={`vs ${chapterData?.comparisonMonthYear || 'Comparison Period'}`}>
+                                  {diff > 0 ? '▲' : '▼'} {Math.abs(diff)}
+                                </span>
+                              )}
+                            </span>
                           </div>
                           <div className="flex items-center justify-between w-full sm:w-auto sm:flex-1 gap-4 pl-7 sm:pl-0">
                             <span className="text-xs font-medium text-gray-500 flex-1 sm:text-right">{(m.action as any)[m.status]}</span>
-                            <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold shrink-0 ${getStatusColor(m.status, 'light')}`}>
-                              +{Math.round(m.max - (m.points || 0))} pts gap
-                            </span>
                           </div>
                         </div>
-                      ))}
+                      )})}
                     </div>
                   </div>
                 )}
@@ -234,6 +270,43 @@ export default function MemberModal({ member, onClose, chapterData }: { member: 
 
             </div>
           </div>
+
+          {/* Comparison Table */}
+          {comparisonMember && (
+            <div className="mt-10">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Historical Performance Comparison</h3>
+              <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-gray-50 border-b border-gray-200 text-[10px] uppercase tracking-widest text-gray-500">
+                        <th className="py-3 px-4 font-bold">Metric</th>
+                        <th className="py-3 px-4 font-bold text-center leading-tight">Previous<br/><span className="text-[9px] font-medium opacity-70 normal-case tracking-normal">{chapterData?.comparisonMonthYear || 'Historical'}</span></th>
+                        <th className="py-3 px-4 font-bold text-center leading-tight text-[#8b5cf6]">Current<br/><span className="text-[9px] font-medium opacity-70 normal-case tracking-normal">{chapterData?.monthYear || 'Current'}</span></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {metrics.map((m, i) => {
+                        return (
+                          <tr key={i} className="hover:bg-gray-50/50 transition-colors">
+                            <td className="py-3 px-4 text-xs font-bold text-gray-700">{m.label}</td>
+                            <td className="py-3 px-4 text-center text-xs font-medium text-gray-500">{m.comparisonPoints !== null ? m.comparisonPoints : '-'} pts</td>
+                            <td className="py-3 px-4 text-center text-xs font-bold text-gray-900">{m.points} pts</td>
+                          </tr>
+                        );
+                      })}
+                      {/* Total Row */}
+                      <tr className="bg-gray-50/50 border-t-2 border-gray-200">
+                        <td className="py-3 px-4 text-xs font-extrabold text-gray-900 uppercase">Total Score</td>
+                        <td className="py-3 px-4 text-center text-xs font-bold text-gray-500">{comparisonMember.totalScore || 0}</td>
+                        <td className="py-3 px-4 text-center text-xs font-extrabold text-[#8b5cf6]">{member.totalScore || 0}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
       </div>

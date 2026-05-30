@@ -1,8 +1,7 @@
-
 import * as XLSX from "xlsx";
-import { transformMemeber } from "./functions";
+import { transformMemeber } from "../convert/functions";
 import { connectDB } from "@/lib/db";
-import MemberReport from "@/models/memberReport";
+import HistoricalReport from "@/models/historicalReport";
 import { revalidatePath, revalidateTag } from "next/cache";
 
 export async function POST(req: Request) {
@@ -10,7 +9,7 @@ export async function POST(req: Request) {
         await connectDB();
         const formData = await req.formData();
         const file = formData.get("file");
-        const reportType = formData.get("reportType") || "overall";
+        const historicalMonthName = formData.get("historicalMonthName");
 
         if (!file || !(file instanceof File)) {
             return Response.json(
@@ -72,12 +71,25 @@ export async function POST(req: Request) {
         const new_data = filteredData.map((row: any) => ({
             ...transformMemeber(row),
             uploadBatchId: batchId,
-            reportType
+            reportType: "historical"
         }));
-        await MemberReport.insertMany(new_data);
+        
+        await HistoricalReport.insertMany(new_data);
+
+        if (historicalMonthName && typeof historicalMonthName === 'string') {
+            const ChapterSettings = (await import("@/models/chapterSettings")).default;
+            await ChapterSettings.findOneAndUpdate(
+                {},
+                { $set: { historicalMonthYear: historicalMonthName } },
+                { upsert: true, sort: { createdAt: -1 } }
+            );
+        }
+
         revalidatePath("/", "page");
         // @ts-ignore
         revalidateTag("excel-data");
+        // @ts-ignore
+        revalidateTag("chapter-settings");
 
         return Response.json({ success: true, data: new_data });
 

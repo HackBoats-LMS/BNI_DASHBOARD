@@ -12,16 +12,7 @@ export default function AdminDashboard() {
   const [savingTop, setSavingTop] = useState(false);
   const [previewType, setPreviewType] = useState("overall");
 
-  // Top Performers State
-  const [topPerformers, setTopPerformers] = useState({
-    monthYear: "May 2025",
-    mostReferrals: "",
-    mostReferralsValue: "",
-    bestAttendance: "",
-    bestAttendanceValue: "",
-    most1to1s: "",
-    most1to1sValue: ""
-  });
+
 
   const [chapterSettings, setChapterSettings] = useState<any>({
     chapterName: "Infinity Chapter",
@@ -30,6 +21,8 @@ export default function AdminDashboard() {
   });
   const [savingSettings, setSavingSettings] = useState(false);
   const [monthlyMonthName, setMonthlyMonthName] = useState("");
+  const [historicalMonthName, setHistoricalMonthName] = useState("");
+  const [comparisonMonthName, setComparisonMonthName] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
@@ -52,15 +45,7 @@ export default function AdminDashboard() {
       })
       .catch(console.error);
 
-    // Fetch existing top performers
-    fetch("/api/top-performers")
-      .then(res => res.json())
-      .then(res => {
-        if (res.success && res.data) {
-          setTopPerformers(res.data);
-        }
-      })
-      .catch(console.error);
+
 
     // Fetch chapter settings
     fetch("/api/chapter-settings")
@@ -68,6 +53,9 @@ export default function AdminDashboard() {
       .then(res => {
         if (res.success && res.data) {
           setChapterSettings(res.data);
+          if (res.data.monthlyMonthYear) setMonthlyMonthName(res.data.monthlyMonthYear);
+          if (res.data.historicalMonthYear) setHistoricalMonthName(res.data.historicalMonthYear);
+          if (res.data.comparisonMonthYear) setComparisonMonthName(res.data.comparisonMonthYear);
         }
       })
       .catch(console.error);
@@ -87,15 +75,24 @@ export default function AdminDashboard() {
 
   async function loadBatches() {
     try {
-      const [resOverall, resMonthly] = await Promise.all([
+      const [resOverall, resMonthly, resHistorical, resComparison] = await Promise.all([
         fetch("/api/data/batches?type=overall"),
-        fetch("/api/data/batches?type=monthly")
+        fetch("/api/data/batches?type=monthly"),
+        fetch("/api/data/batches?type=historical"),
+        fetch("/api/data/batches?type=comparison")
       ]);
-      const [jsonOverall, jsonMonthly] = await Promise.all([resOverall.json(), resMonthly.json()]);
+      const [jsonOverall, jsonMonthly, jsonHistorical, jsonComparison] = await Promise.all([
+        resOverall.json(), 
+        resMonthly.json(),
+        resHistorical.json(),
+        resComparison.json()
+      ]);
       
       let allBatches: any[] = [];
       if (jsonOverall.success) allBatches = [...allBatches, ...jsonOverall.batches];
       if (jsonMonthly.success) allBatches = [...allBatches, ...jsonMonthly.batches];
+      if (jsonHistorical.success) allBatches = [...allBatches, ...jsonHistorical.batches];
+      if (jsonComparison.success) allBatches = [...allBatches, ...jsonComparison.batches];
       
       allBatches.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       setBatches(allBatches);
@@ -108,6 +105,24 @@ export default function AdminDashboard() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (reportType === 'monthly' && !monthlyMonthName.trim()) {
+      alert("Please enter a Month Name before uploading the file.");
+      e.target.value = '';
+      return;
+    }
+
+    if (reportType === 'historical' && !historicalMonthName.trim()) {
+      alert("Please enter a Historical Period Name before uploading the file.");
+      e.target.value = '';
+      return;
+    }
+
+    if (reportType === 'comparison' && !comparisonMonthName.trim()) {
+      alert("Please enter a Comparison Period Name before uploading the file.");
+      e.target.value = '';
+      return;
+    }
+
     setUploading(true);
     const formData = new FormData();
     formData.append("file", file);
@@ -115,9 +130,19 @@ export default function AdminDashboard() {
     if (reportType === 'monthly' && monthlyMonthName) {
       formData.append("monthlyMonthName", monthlyMonthName);
     }
+    if (reportType === 'historical' && historicalMonthName) {
+      formData.append("historicalMonthName", historicalMonthName);
+    }
+    if (reportType === 'comparison' && comparisonMonthName) {
+      formData.append("comparisonMonthName", comparisonMonthName);
+    }
 
     try {
-      const endpoint = reportType === 'monthly' ? "/api/data/convert-monthly" : "/api/data/convert";
+      let endpoint = "/api/data/convert";
+      if (reportType === 'monthly') endpoint = "/api/data/convert-monthly";
+      if (reportType === 'historical') endpoint = "/api/data/convert-historical";
+      if (reportType === 'comparison') endpoint = "/api/data/convert-comparison";
+      
       const res = await fetch(endpoint, {
         method: "POST",
         body: formData,
@@ -150,35 +175,7 @@ export default function AdminDashboard() {
     // Disabled since data is fetched from DB
   };
 
-  const handleTopPerformersChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTopPerformers({
-      ...topPerformers,
-      [e.target.name]: e.target.value
-    });
-  };
 
-  const saveTopPerformers = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSavingTop(true);
-    try {
-      const res = await fetch("/api/top-performers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(topPerformers)
-      });
-      const result = await res.json();
-      if (result.success) {
-        alert("Top performers saved successfully!");
-      } else {
-        alert("Failed to save top performers.");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Error saving top performers.");
-    } finally {
-      setSavingTop(false);
-    }
-  };
 
   const handleSettingsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setChapterSettings({
@@ -300,6 +297,29 @@ export default function AdminDashboard() {
     }
   };
 
+  const saveSpecificPeriod = async (field: string, value: string) => {
+    if (!value.trim()) return alert("Please enter a valid period name.");
+    setSavingSettings(true);
+    try {
+      const res = await fetch("/api/chapter-settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [field]: value })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("Period saved successfully!");
+        setChapterSettings((prev: any) => ({ ...prev, ...data.data }));
+      } else {
+        alert("Failed to save period.");
+      }
+    } catch (err) {
+      alert("Error saving period.");
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("admin_auth");
     router.push("/pages/secure/auth/admin/login");
@@ -356,8 +376,7 @@ export default function AdminDashboard() {
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Chapter Name</label>
                   <input type="text" name="chapterName" value={chapterSettings.chapterName || ""} onChange={handleSettingsChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:bg-white focus:ring-2 focus:ring-[#10b981] outline-none mb-2" placeholder="e.g. Infinity Chapter" required />
 
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Period / Month</label>
-                  <input type="text" name="monthYear" value={chapterSettings.monthYear || ""} onChange={handleSettingsChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:bg-white focus:ring-2 focus:ring-[#10b981] outline-none mb-2" placeholder="e.g. Jan – May 2025" required />
+
 
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Number of Meetings</label>
                   <input type="text" name="meetingsCount" value={chapterSettings.meetingsCount || ""} onChange={handleSettingsChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:bg-white focus:ring-2 focus:ring-[#10b981] outline-none" placeholder="e.g. 23" required />
@@ -479,48 +498,26 @@ export default function AdminDashboard() {
               </form>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <span className="text-[#f59e0b]">🏆</span> Set Top Performers
-              </h2>
-              <form onSubmit={saveTopPerformers} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Top Performers Period</label>
-                  <input type="text" name="monthYear" value={topPerformers.monthYear || ""} onChange={handleTopPerformersChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:bg-white focus:ring-2 focus:ring-[#10b981] outline-none" placeholder="e.g. May 2025" required />
-                </div>
-
-                <div className="pt-2 border-t border-gray-100">
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1 text-[#b90000]">Most Referrals</label>
-                  <input type="text" name="mostReferrals" value={topPerformers.mostReferrals || ""} onChange={handleTopPerformersChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 mb-2 outline-none" placeholder="Member Name" />
-                  <input type="text" name="mostReferralsValue" value={topPerformers.mostReferralsValue || ""} onChange={handleTopPerformersChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 outline-none" placeholder="e.g. 27 referrals" />
-                </div>
-
-                <div className="pt-2 border-t border-gray-100">
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1 text-[#f59e0b]">Best Attendance</label>
-                  <input type="text" name="bestAttendance" value={topPerformers.bestAttendance || ""} onChange={handleTopPerformersChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 mb-2 outline-none" placeholder="Member Name" />
-                  <input type="text" name="bestAttendanceValue" value={topPerformers.bestAttendanceValue || ""} onChange={handleTopPerformersChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 outline-none" placeholder="e.g. 23/23" />
-                </div>
-
-                <div className="pt-2 border-t border-gray-100">
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1 text-[#b90000]">Most 1-to-1s</label>
-                  <input type="text" name="most1to1s" value={topPerformers.most1to1s || ""} onChange={handleTopPerformersChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 mb-2 outline-none" placeholder="Member Name" />
-                  <input type="text" name="most1to1sValue" value={topPerformers.most1to1sValue || ""} onChange={handleTopPerformersChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 outline-none" placeholder="e.g. 22 meetings" />
-                </div>
-
-                <button type="submit" disabled={savingTop} className="w-full bg-[#10b981] hover:bg-[#059669] text-white font-bold py-2.5 rounded-lg mt-4 transition-colors disabled:opacity-50">
-                  {savingTop ? "Saving..." : "Save Recognition Data"}
-                </button>
-              </form>
-            </div>
           </div>
 
           {/* Right Column: Excel Upload & Preview */}
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <span className="text-[#10b981]">📊</span> Upload BNI Report (Excel)
+                <span className="text-[#10b981]">📊</span> Upload Data Report
               </h2>
-              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center p-6 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
+              <div className="flex flex-col gap-4 p-6 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
+                <div className="w-full">
+                  <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Period / Month</label>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input type="text" name="monthYear" value={chapterSettings.monthYear || ""} onChange={handleSettingsChange} className="w-full sm:w-1/2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#10b981]" placeholder="e.g. Jan – May 2025" required />
+                    <button type="button" onClick={saveBasicSettings} disabled={savingSettings} className="bg-[#10b981] hover:bg-[#059669] text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:opacity-50 text-xs sm:text-sm whitespace-nowrap shadow-sm">
+                      {savingSettings ? "Saving..." : "Save Period"}
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-gray-400 mt-1">Set and save the period name before uploading the report.</p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center pt-2">
                 <input
                   type="file"
                   accept=".xlsx,.xls"
@@ -529,6 +526,7 @@ export default function AdminDashboard() {
                   className="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-[#10b981]/10 file:text-[#10b981] hover:file:bg-[#10b981]/20 transition-all cursor-pointer"
                 />
                 {uploading && <span className="text-sm font-bold text-[#10b981] animate-pulse">Processing...</span>}
+                </div>
               </div>
               <p className="text-xs text-gray-400 font-medium mt-3 mb-6">This will parse the Excel file, calculate scores, and update the database for the Overall Scoreboard.</p>
 
@@ -538,16 +536,21 @@ export default function AdminDashboard() {
               <div className="flex flex-col gap-4 p-6 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
                 <div className="w-full">
                   <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Month Name</label>
-                  <input 
-                    type="text" 
-                    value={monthlyMonthName}
-                    onChange={(e) => setMonthlyMonthName(e.target.value)}
-                    placeholder="e.g., April 2026" 
-                    className="w-full sm:w-1/2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#3b82f6]" 
-                  />
-                  <p className="text-[10px] text-gray-400 mt-1">Enter the month name before selecting the file (optional).</p>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input 
+                      type="text" 
+                      value={monthlyMonthName}
+                      onChange={(e) => setMonthlyMonthName(e.target.value)}
+                      placeholder="e.g., April 2026" 
+                      className="w-full sm:w-1/2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#3b82f6]" 
+                    />
+                    <button type="button" onClick={() => saveSpecificPeriod("monthlyMonthYear", monthlyMonthName)} disabled={savingSettings} className="bg-[#3b82f6] hover:bg-[#2563eb] text-white font-bold py-2 px-4 rounded-lg transition-colors text-xs sm:text-sm whitespace-nowrap shadow-sm disabled:opacity-50">
+                      {savingSettings ? "Saving..." : "Save Period"}
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-gray-400 mt-1">Set and save the month name before uploading the report.</p>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center pt-2">
                   <input 
                     type="file" 
                     accept=".xlsx,.xls" 
@@ -558,7 +561,72 @@ export default function AdminDashboard() {
                   {uploading && <span className="text-sm font-bold text-[#3b82f6] animate-pulse">Processing...</span>}
                 </div>
               </div>
-              <p className="text-xs text-gray-400 font-medium mt-3">This will parse the Excel file, calculate scores, and update the database immediately.</p>
+              <p className="text-xs text-gray-400 font-medium mt-3 mb-6">This will parse the Excel file, calculate scores, and update the database immediately.</p>
+
+              <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-[#8b5cf6]">📊</span> Upload Historical Report (Before 6 Months)
+              </h2>
+              <div className="flex flex-col gap-4 p-6 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50 mb-8">
+                <div className="w-full">
+                  <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Historical Period Name</label>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input 
+                      type="text" 
+                      value={historicalMonthName}
+                      onChange={(e) => setHistoricalMonthName(e.target.value)}
+                      placeholder="e.g., Dec 2025 - May 2026" 
+                      className="w-full sm:w-1/2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#8b5cf6]" 
+                    />
+                    <button type="button" onClick={() => saveSpecificPeriod("historicalMonthYear", historicalMonthName)} disabled={savingSettings} className="bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold py-2 px-4 rounded-lg transition-colors text-xs sm:text-sm whitespace-nowrap shadow-sm disabled:opacity-50">
+                      {savingSettings ? "Saving..." : "Save Period"}
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-gray-400 mt-1">Set and save the period name for the Overall Report section before uploading.</p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center pt-2">
+                  <input 
+                    type="file" 
+                    accept=".xlsx,.xls" 
+                    onChange={(e) => handleUpload(e, 'historical')} 
+                    disabled={uploading}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-[#8b5cf6]/10 file:text-[#8b5cf6] hover:file:bg-[#8b5cf6]/20 transition-all cursor-pointer"
+                  />
+                  {uploading && <span className="text-sm font-bold text-[#8b5cf6] animate-pulse">Processing...</span>}
+                </div>
+              </div>
+
+              <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-[#8b5cf6]">📊</span> Upload Comparison Data (Member Modal)
+              </h2>
+              <div className="flex flex-col gap-4 p-6 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
+                <div className="w-full">
+                  <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Comparison Period Name</label>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input 
+                      type="text" 
+                      value={comparisonMonthName}
+                      onChange={(e) => setComparisonMonthName(e.target.value)}
+                      placeholder="e.g., Dec 2025 - May 2026" 
+                      className="w-full sm:w-1/2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#8b5cf6]" 
+                    />
+                    <button type="button" onClick={() => saveSpecificPeriod("comparisonMonthYear", comparisonMonthName)} disabled={savingSettings} className="bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold py-2 px-4 rounded-lg transition-colors text-xs sm:text-sm whitespace-nowrap shadow-sm disabled:opacity-50">
+                      {savingSettings ? "Saving..." : "Save Period"}
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-gray-400 mt-1">Set and save the period name for the comparison tooltips before uploading.</p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center pt-2">
+                  <input 
+                    type="file" 
+                    accept=".xlsx,.xls" 
+                    onChange={(e) => handleUpload(e, 'comparison')} 
+                    disabled={uploading}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-[#8b5cf6]/10 file:text-[#8b5cf6] hover:file:bg-[#8b5cf6]/20 transition-all cursor-pointer"
+                  />
+                  {uploading && <span className="text-sm font-bold text-[#8b5cf6] animate-pulse">Processing...</span>}
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 font-medium mt-3">This data is exclusively used in the Member Modal (when clicking a row) to show growth/decline arrows comparing current scores vs historical scores.</p>
 
               <div className="mt-6 pt-6 border-t border-gray-100 flex gap-3">
                 <button

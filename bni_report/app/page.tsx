@@ -10,6 +10,8 @@ import { unstable_cache } from "next/cache";
 import { connectDB } from "@/lib/db";
 import MemberReport from "@/models/memberReport";
 import MonthlyReport from "@/models/monthlyReport";
+import HistoricalReport from "@/models/historicalReport";
+import ComparisonReport from "@/models/comparisonReport";
 import ChapterSettings from "@/models/chapterSettings";
 
 export const getCachedChapterSettings = unstable_cache(
@@ -38,7 +40,11 @@ const getCachedData = async (type: string = 'overall') => {
     async () => {
       try {
         await connectDB();
-        const Model = type === 'monthly' ? MonthlyReport : MemberReport;
+        let Model: any = MemberReport;
+        if (type === 'monthly') Model = MonthlyReport;
+        if (type === 'historical') Model = HistoricalReport;
+        if (type === 'comparison') Model = ComparisonReport;
+
         const query = type === 'overall'
           ? { $or: [{ reportType: 'overall' }, { reportType: { $exists: false } }] }
           : { reportType: type };
@@ -72,6 +78,8 @@ export const dynamic = 'force-static';
 export default async function Home() {
   const data = await getCachedData('overall');
   const monthlyData = await getCachedData('monthly');
+  const historicalData = await getCachedData('historical');
+  const comparisonData = await getCachedData('comparison');
   const chapterData = await getCachedChapterSettings();
 
   return (
@@ -90,11 +98,11 @@ export default async function Home() {
           })()}
         </div>
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8 items-stretch">
-          <OverallReport data={data} chapterData={chapterData} />
+          <OverallReport data={historicalData && historicalData.length > 0 ? historicalData : data} chapterData={chapterData} />
           <Recognition data={data} monthlyData={monthlyData || []} chapterData={chapterData} />
         </div>
       </div>
-      <Table initialData={data} chapterData={chapterData} />
+      <Table initialData={data} comparisonData={comparisonData} chapterData={chapterData} />
       <ScoringParameters />
     </main>
   );

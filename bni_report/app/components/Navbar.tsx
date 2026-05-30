@@ -18,8 +18,8 @@ const Navbar = ({ chapterData }: { chapterData?: any }) => {
                 </div>
 
                 {/* Powered By */}
-                <div className='flex flex-col items-start'>
-                    <p className='text-[10px] sm:text-xs md:text-sm font-semibold text-gray-600 mb-1'>
+                <div className='flex flex-col items-center'>
+                    <p className='text-[8px] sm:text-xs md:text-sm font-semibold text-gray-600 mb-1'>
                         powered by
                     </p>
 
