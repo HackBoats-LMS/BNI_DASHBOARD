@@ -55,7 +55,7 @@ export default function OverallReport({ data, chapterData }: { data: any[], chap
           </div>
           <div>
             <h2 className="text-[15px] font-bold tracking-wide">OVERALL REPORT</h2>
-            <p className="text-xs font-medium text-white/70 mt-0.5">Chapter performance snapshot &middot; {chapterData?.historicalMonthYear || chapterData?.monthYear || "Jan – May 2025"}</p>
+            <p className="text-xs font-medium text-white/70 mt-0.5">Chapter performance snapshot &middot; {chapterData?.monthYear || "Jan – May 2025"}</p>
           </div>
         </div>
         <div className="text-right flex flex-col items-end">

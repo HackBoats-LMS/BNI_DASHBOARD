@@ -104,7 +104,7 @@ export default async function Home() {
           })()}
         </div>
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8 items-stretch">
-          <OverallReport data={historicalData && historicalData.length > 0 ? historicalData : data} chapterData={chapterData} />
+          <OverallReport data={data} chapterData={chapterData} />
           <Recognition data={data} monthlyData={monthlyData || []} chapterData={chapterData} />
         </div>
       </div>

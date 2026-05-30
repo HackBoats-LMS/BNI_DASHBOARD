@@ -553,38 +553,6 @@ export default function AdminDashboard() {
               </div>
               <p className="text-xs text-gray-400 font-medium mt-3 mb-6">This data updates the Monthly Scorecard and the Historical Comparison tables in the Member Modal.</p>
 
-              <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <span className="text-[#8b5cf6]">📊</span> Upload Historical Report (Before 6 Months)
-              </h2>
-              <div className="flex flex-col gap-4 p-6 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50 mb-8">
-                <div className="w-full">
-                  <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Historical Period Name</label>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <input 
-                      type="text" 
-                      value={historicalMonthName}
-                      onChange={(e) => setHistoricalMonthName(e.target.value)}
-                      placeholder="e.g., Dec 2025 - May 2026" 
-                      className="w-full sm:w-1/2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#8b5cf6]" 
-                    />
-                    <button type="button" onClick={() => saveSpecificPeriod("historicalMonthYear", historicalMonthName)} disabled={savingSettings} className="bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-bold py-2 px-4 rounded-lg transition-colors text-xs sm:text-sm whitespace-nowrap shadow-sm disabled:opacity-50">
-                      {savingSettings ? "Saving..." : "Save Period"}
-                    </button>
-                  </div>
-                  <p className="text-[10px] text-gray-400 mt-1">Set and save the period name for the Overall Report section before uploading.</p>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center pt-2">
-                  <input 
-                    type="file" 
-                    accept=".xlsx,.xls" 
-                    onChange={(e) => handleUpload(e, 'historical')} 
-                    disabled={uploading}
-                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-[#8b5cf6]/10 file:text-[#8b5cf6] hover:file:bg-[#8b5cf6]/20 transition-all cursor-pointer"
-                  />
-                  {uploading && <span className="text-sm font-bold text-[#8b5cf6] animate-pulse">Processing...</span>}
-                </div>
-              </div>
-
               <div className="mt-6 pt-6 border-t border-gray-100 flex gap-3">
                 <button
                   onClick={async () => {
