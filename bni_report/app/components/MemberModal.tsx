@@ -1,6 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import * as htmlToImage from 'html-to-image';
 
-export default function MemberModal({ member, comparisonData = [], onClose, chapterData }: { member: any, comparisonData?: any[], onClose: () => void, chapterData?: any }) {
+export default function MemberModal({ member, allMonthlyData = [], comparisonData = [], onClose, chapterData }: { member: any, allMonthlyData?: any[], comparisonData?: any[], onClose: () => void, chapterData?: any }) {
+  const [downloading, setDownloading] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
   // Prevent scrolling when modal is open
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -16,7 +19,14 @@ export default function MemberModal({ member, comparisonData = [], onClose, chap
   const tVisitors = chapterData?.individualVisitorsTarget || '1 per month';
   const tCEU = chapterData?.individualCEUTarget || '0.5 hour per week';
   const tTYFCB = chapterData?.individualTYFCBTarget || '10k+';
-  const comparisonMember = comparisonData?.find((h: any) => h.fullName === member.fullName);
+  
+  // Extract up to 6 months of history for this member (only batches with a specific periodDate)
+  const rawHistory = allMonthlyData?.filter((m: any) => m.fullName === member.fullName && m.periodDate) || [];
+  // Sort descending by periodDate to get the latest 6 (newest first)
+  const memberMonthlyHistory = rawHistory.sort((a: any, b: any) => (b.periodDate || '').localeCompare(a.periodDate || '')).slice(0, 6);
+  
+  // Use the most recent month for tooltip comparisons if available
+  const comparisonMember = memberMonthlyHistory.length > 0 ? memberMonthlyHistory[0] : comparisonData?.find((h: any) => h.fullName === member.fullName);
 
   const getComparisonPoints = (key: string) => {
     if (!comparisonMember) return null;
@@ -80,6 +90,155 @@ export default function MemberModal({ member, comparisonData = [], onClose, chap
   const band = member.band?.toUpperCase() || 'GREY';
   const headerBgColor = band === 'GREEN' ? 'bg-[#10b981]' : band === 'AMBER' ? 'bg-[#f59e0b]' : band === 'RED' ? 'bg-[#ef4444]' : 'bg-[#9ca3af]';
 
+  const handleDownload = async () => {
+    if (!modalRef.current) return;
+    setDownloading(true);
+
+    // Yield to let the "Downloading..." state render
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    // Clone the modal into an off-screen wrapper to avoid visual layout shifts
+    const cloneWrapper = document.createElement('div');
+    cloneWrapper.style.position = 'absolute';
+    cloneWrapper.style.top = '-10000px';
+    cloneWrapper.style.left = '-10000px';
+    cloneWrapper.style.width = '1000px';
+    cloneWrapper.style.zIndex = '-1';
+    
+    const clonedModal = modalRef.current.cloneNode(true) as HTMLElement;
+    clonedModal.style.width = '1000px';
+    clonedModal.style.minWidth = '1000px';
+    clonedModal.style.maxHeight = 'none';
+    clonedModal.style.height = 'auto';
+    clonedModal.classList.remove('max-h-[90vh]', 'overflow-hidden');
+    
+    // Un-constrain internal scrolling div if any
+    const scrollAreas = clonedModal.querySelectorAll('.overflow-y-auto');
+    scrollAreas.forEach(area => {
+      (area as HTMLElement).classList.remove('overflow-y-auto');
+      (area as HTMLElement).style.overflow = 'visible';
+      (area as HTMLElement).style.maxHeight = 'none';
+    });
+    
+    // Hide download/close buttons
+    const hideElements = clonedModal.querySelectorAll('.hide-in-pdf');
+    hideElements.forEach(el => {
+      (el as HTMLElement).style.display = 'none';
+    });
+
+    cloneWrapper.appendChild(clonedModal);
+    document.body.appendChild(cloneWrapper);
+
+    // Yield to the browser so it can apply the new layout to the clone
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    try {
+      const dataUrl = await htmlToImage.toJpeg(clonedModal, {
+        backgroundColor: '#ffffff',
+        pixelRatio: 5, 
+        quality: 1.00,
+      });
+
+      const { jsPDF } = await import('jspdf');
+
+      const imgProps = new Image();
+      imgProps.src = dataUrl;
+      await new Promise((resolve) => { imgProps.onload = resolve; });
+
+      // Fetch HB.png and convert to base64
+      let hbDataUrl = null;
+      try {
+        const res = await fetch('/HB.png');
+        const blob = await res.blob();
+        hbDataUrl = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(blob);
+        });
+      } catch (err) {
+        console.error("Failed to load HB logo", err);
+      }
+
+      let hbImgProps:any = null;
+      if (hbDataUrl) {
+        hbImgProps = new Image();
+        hbImgProps.src = hbDataUrl as string;
+        await new Promise((resolve) => { hbImgProps.onload = resolve; });
+      }
+
+      const pdfLogicalWidth = 1000;
+      const captureRatio = imgProps.width / pdfLogicalWidth;
+      const pdfLogicalHeight = imgProps.height / captureRatio;
+
+      const padding = 40;
+      const topOffset = 220; 
+      const bottomOffset = 180; 
+
+      // Create a custom page size based on logical units to prevent PDF spec maximum-height clipping
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'px',
+        format: [pdfLogicalWidth + (padding * 2), pdfLogicalHeight + topOffset + bottomOffset]
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+
+      // Background
+      pdf.setFillColor(255, 255, 255);
+      pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
+
+      const chapterNameStr = chapterData?.chapterName || "Infinity Chapter";
+
+      // Add ImpactSync logo text at top left
+      pdf.setFontSize(54);
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(6, 78, 59); // emerald-900
+      pdf.text("Impact", padding, 120);
+      const impactWidth = pdf.getTextWidth("Impact");
+      pdf.setTextColor(5, 150, 105); // emerald-600
+      pdf.text("Sync", padding + impactWidth, 120);
+
+      // Add Chapter Scoreboard title
+      pdf.setFontSize(28);
+      pdf.setTextColor(17, 24, 39); // gray-900
+      pdf.text(`${chapterNameStr} - Member Report`, padding, 170);
+
+      // Draw the super high-res image into the logical bounds
+      pdf.addImage(dataUrl, 'JPEG', padding, topOffset, pdfLogicalWidth, pdfLogicalHeight);
+
+      // Add powered by hackboats at bottom right
+      pdf.setFontSize(24);
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(107, 114, 128); // gray-500
+      const poweredByText = "powered by";
+      const pbWidth = pdf.getTextWidth(poweredByText);
+
+      if (hbImgProps && hbDataUrl) {
+        const hbHeight = 55; // Smaller logo
+        const hbWidth = (hbImgProps.width * hbHeight) / hbImgProps.height;
+
+        const blockLeft = pdfWidth - padding - Math.max(hbWidth, pbWidth);
+
+        pdf.text(poweredByText, blockLeft, pdfHeight - 110);
+        pdf.addImage(hbDataUrl as string, 'PNG', blockLeft, pdfHeight - 95, hbWidth, hbHeight);
+      } else {
+        pdf.text("powered by hackboats", pdfWidth - 300, pdfHeight - 100);
+      }
+
+      pdf.save(`bni-member-${member.fullName.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.pdf`);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Failed to download PDF.');
+    } finally {
+      // Clean up the off-screen clone
+      if (document.body.contains(cloneWrapper)) {
+        document.body.removeChild(cloneWrapper);
+      }
+      setDownloading(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
       {/* Backdrop */}
@@ -89,18 +248,12 @@ export default function MemberModal({ member, comparisonData = [], onClose, chap
       ></div>
 
       {/* Modal */}
-      <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col my-auto max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
+      <div ref={modalRef} className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col my-auto max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
 
         {/* Header */}
-        <div className={`${headerBgColor} p-6 sm:p-8 text-white relative flex justify-between items-center shrink-0`}>
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/10 hover:bg-black/20 flex items-center justify-center transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
-          </button>
-
-          <div className="flex items-center gap-5">
+        <div className={`${headerBgColor} p-6 sm:p-8 text-white relative flex justify-between items-start shrink-0`}>
+          {/* Left: Profile Info */}
+          <div className="flex items-center gap-4 sm:gap-5">
             <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/20 border-2 border-white/30 flex items-center justify-center text-lg sm:text-xl font-bold tracking-wider backdrop-blur-md shrink-0">
               {getInitials(member.fullName)}
             </div>
@@ -110,11 +263,45 @@ export default function MemberModal({ member, comparisonData = [], onClose, chap
             </div>
           </div>
 
-          <div className="text-right pr-6 sm:pr-12">
-            <p className="text-[9px] sm:text-[10px] font-bold text-white/70 uppercase tracking-widest mb-1">Traffic Score</p>
-            <div className="flex items-baseline gap-1 justify-end">
-              <span className="text-3xl sm:text-4xl font-extrabold leading-none">{member.totalScore || 0}</span>
-              <span className="text-xs sm:text-sm font-bold text-white/70">/100</span>
+          {/* Right: Actions & Score */}
+          <div className="flex flex-col items-end gap-3 sm:gap-4">
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2 sm:gap-3 hide-in-pdf">
+              <button
+                onClick={handleDownload}
+                disabled={downloading}
+                className="px-3 py-1.5 rounded-full bg-white hover:bg-gray-50 flex items-center gap-1.5 transition-colors text-[11px] font-extrabold text-gray-900 tracking-widest uppercase shadow-sm disabled:opacity-50"
+              >
+                {downloading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-1 h-3 w-3 text-gray-900" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                    Export
+                  </>
+                )}
+              </button>
+              <button
+                onClick={onClose}
+                className="w-8 h-8 rounded-full bg-black/10 hover:bg-black/20 flex items-center justify-center transition-colors shadow-sm"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+
+            {/* Traffic Score */}
+            <div className="text-right">
+              <p className="text-[9px] sm:text-[10px] font-bold text-white/70 uppercase tracking-widest mb-1">Traffic Score</p>
+              <div className="flex items-baseline gap-1 justify-end">
+                <span className="text-3xl sm:text-4xl font-extrabold leading-none">{member.totalScore || 0}</span>
+                <span className="text-xs sm:text-sm font-bold text-white/70">/100</span>
+              </div>
             </div>
           </div>
         </div>
@@ -164,11 +351,6 @@ export default function MemberModal({ member, comparisonData = [], onClose, chap
                   </div>
                   <div className="mt-3 pt-3 border-t border-gray-50 flex justify-between items-center">
                     <p className="text-[10px] font-semibold text-gray-400">Target: {m.target}</p>
-                    {diff !== null && (
-                      <p className={`text-[10px] font-bold flex items-center gap-0.5 ${diff > 0 ? 'text-[#10b981]' : diff < 0 ? 'text-[#ef4444]' : 'text-gray-300'}`} title={`vs ${chapterData?.comparisonMonthYear || 'Comparison Period'}`}>
-                        {diff > 0 ? '▲' : diff < 0 ? '▼' : '—'} {Math.abs(diff)}
-                      </p>
-                    )}
                   </div>
                 </div>
               )})}
@@ -210,14 +392,9 @@ export default function MemberModal({ member, comparisonData = [], onClose, chap
                       {metrics.filter(m => m.status === 'green').map((m, i) => {
                         const diff = m.comparisonPoints !== null ? (m.points || 0) - m.comparisonPoints : null;
                         return (
-                        <div key={i} className="px-3 py-1.5 rounded-full bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/20 text-[11px] sm:text-xs font-bold flex items-center gap-1.5">
+                        <div key={i} className="px-3 py-1.5 rounded-full bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/20 text-[11px] sm:text-xs font-bold flex items-center gap-1.5 whitespace-nowrap">
                           <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                           {m.label}
-                          {diff !== null && diff !== 0 && (
-                            <span className={`text-[10px] ml-0.5 ${diff > 0 ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
-                              {diff > 0 ? '▲' : '▼'} {Math.abs(diff)}
-                            </span>
-                          )}
                         </div>
                       )})}
                     </div>
@@ -242,11 +419,6 @@ export default function MemberModal({ member, comparisonData = [], onClose, chap
                             </span>
                             <span className="font-bold text-gray-700 text-sm flex items-center gap-2">
                               {m.label}
-                              {diff !== null && diff !== 0 && (
-                                <span className={`text-[10px] ${diff > 0 ? 'text-[#10b981]' : 'text-[#ef4444]'}`} title={`vs ${chapterData?.comparisonMonthYear || 'Comparison Period'}`}>
-                                  {diff > 0 ? '▲' : '▼'} {Math.abs(diff)}
-                                </span>
-                              )}
                             </span>
                           </div>
                           <div className="flex items-center justify-between w-full sm:w-auto sm:flex-1 gap-4 pl-7 sm:pl-0">
@@ -272,35 +444,50 @@ export default function MemberModal({ member, comparisonData = [], onClose, chap
           </div>
 
           {/* Comparison Table */}
-          {comparisonMember && (
+          {memberMonthlyHistory.length > 0 && (
             <div className="mt-10">
               <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Historical Performance Comparison</h3>
               <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
+                  <table className="w-full text-left border-collapse whitespace-nowrap">
                     <thead>
                       <tr className="bg-gray-50 border-b border-gray-200 text-[10px] uppercase tracking-widest text-gray-500">
-                        <th className="py-3 px-4 font-bold">Metric</th>
-                        <th className="py-3 px-4 font-bold text-center leading-tight">Previous<br/><span className="text-[9px] font-medium opacity-70 normal-case tracking-normal">{chapterData?.comparisonMonthYear || 'Historical'}</span></th>
-                        <th className="py-3 px-4 font-bold text-center leading-tight text-[#8b5cf6]">Current<br/><span className="text-[9px] font-medium opacity-70 normal-case tracking-normal">{chapterData?.monthYear || 'Current'}</span></th>
+                        <th className="py-3 px-4 font-bold text-left">Period</th>
+                        <th className="py-3 px-4 font-bold text-center">Attendance %</th>
+                        <th className="py-3 px-4 font-bold text-center">Referrals</th>
+                        <th className="py-3 px-4 font-bold text-center">Visitors</th>
+                        <th className="py-3 px-4 font-bold text-center">TYFCB</th>
+                        <th className="py-3 px-4 font-bold text-center">1-2-1s</th>
+                        <th className="py-3 px-4 font-bold text-center">Sponsor</th>
+                        <th className="py-3 px-4 font-bold text-center">CEU's</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {metrics.map((m, i) => {
+                      {memberMonthlyHistory.map((histRow: any, idx: number) => {
+                        const isLatest = idx === 0;
+                        // Format the periodDate from "YYYY-MM" to "MMM YYYY"
+                        let periodLabel = histRow.periodDate || 'Previous';
+                        if (histRow.periodDate) {
+                          const [year, month] = histRow.periodDate.split('-');
+                          const dateObj = new Date(parseInt(year), parseInt(month) - 1);
+                          periodLabel = dateObj.toLocaleString('default', { month: 'short', year: 'numeric' });
+                        }
+
                         return (
-                          <tr key={i} className="hover:bg-gray-50/50 transition-colors">
-                            <td className="py-3 px-4 text-xs font-bold text-gray-700">{m.label}</td>
-                            <td className="py-3 px-4 text-center text-xs font-medium text-gray-500">{m.comparisonPoints !== null ? m.comparisonPoints : '-'} pts</td>
-                            <td className="py-3 px-4 text-center text-xs font-bold text-gray-900">{m.points} pts</td>
+                          <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                            <td className={`py-3 px-4 text-xs font-bold ${isLatest ? 'text-[#8b5cf6]' : 'text-gray-500'}`}>{periodLabel}</td>
+                            <td className={`py-3 px-4 text-center text-xs ${isLatest ? 'font-bold' : 'font-medium'} text-gray-900`}>{histRow.attendancePercentage !== undefined ? Math.round(histRow.attendancePercentage) + '%' : '0%'}</td>
+                            <td className={`py-3 px-4 text-center text-xs ${isLatest ? 'font-bold' : 'font-medium'} text-gray-900`}>{histRow.referals !== undefined ? histRow.referals : '0'}</td>
+                            <td className={`py-3 px-4 text-center text-xs ${isLatest ? 'font-bold' : 'font-medium'} text-gray-900`}>{histRow.visitors !== undefined ? histRow.visitors : '0'}</td>
+                            <td className={`py-3 px-4 text-center text-xs ${isLatest ? 'font-bold' : 'font-medium'} text-gray-900`}>
+                              {histRow.TYFCB !== undefined ? new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(histRow.TYFCB) + '/-' : '0/-'}
+                            </td>
+                            <td className={`py-3 px-4 text-center text-xs ${isLatest ? 'font-bold' : 'font-medium'} text-gray-900`}>{histRow.onetoone !== undefined ? histRow.onetoone : '0'}</td>
+                            <td className={`py-3 px-4 text-center text-xs ${isLatest ? 'font-bold' : 'font-medium'} text-gray-900`}>{histRow.sponsors !== undefined ? histRow.sponsors : (histRow.sponsorPoints ? 1 : 0)}</td>
+                            <td className={`py-3 px-4 text-center text-xs ${isLatest ? 'font-bold' : 'font-medium'} text-gray-900`}>{histRow.CEU !== undefined ? histRow.CEU : '0'}</td>
                           </tr>
                         );
                       })}
-                      {/* Total Row */}
-                      <tr className="bg-gray-50/50 border-t-2 border-gray-200">
-                        <td className="py-3 px-4 text-xs font-extrabold text-gray-900 uppercase">Total Score</td>
-                        <td className="py-3 px-4 text-center text-xs font-bold text-gray-500">{comparisonMember.totalScore || 0}</td>
-                        <td className="py-3 px-4 text-center text-xs font-extrabold text-[#8b5cf6]">{member.totalScore || 0}</td>
-                      </tr>
                     </tbody>
                   </table>
                 </div>

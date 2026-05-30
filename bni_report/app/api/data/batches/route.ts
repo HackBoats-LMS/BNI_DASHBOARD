@@ -22,7 +22,8 @@ export async function GET(req: Request) {
           _id: "$uploadBatchId",
           count: { $sum: 1 },
           createdAt: { $first: "$createdAt" },
-          reportType: { $first: { $ifNull: ["$reportType", type || "overall"] } }
+          reportType: { $first: { $ifNull: ["$reportType", type || "overall"] } },
+          periodDate: { $first: "$periodDate" }
         }
       },
       { $sort: { createdAt: -1 } }

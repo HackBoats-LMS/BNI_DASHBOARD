@@ -70,21 +70,21 @@ export default function Recognition({ data, monthlyData, chapterData }: { data: 
           </div>
         </div>
 
-        {/* Monthly Champion (Silver Ribbon) */}
-        <div className="flex-1 min-w-0 bg-gradient-to-br from-slate-50 to-white border border-slate-200 rounded-xl p-3 relative group/award hover:border-slate-300 transition-colors shadow-sm hover:shadow">
-          <p className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+        {/* Monthly Champion (Gold Ribbon) */}
+        <div className="flex-1 min-w-0 bg-gradient-to-br from-amber-50/80 to-white border border-amber-100/80 rounded-xl p-3 relative group/award hover:border-amber-200 transition-colors shadow-sm hover:shadow">
+          <p className="text-[9px] font-extrabold text-amber-600/80 uppercase tracking-wide mb-2 flex items-center gap-1.5">
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
             Monthly Champion
           </p>
           <div className="flex items-start gap-2.5">
-            <svg className="w-7 h-7 text-slate-400 shrink-0 drop-shadow-sm group-hover/award:scale-110 group-hover/award:rotate-3 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" fill="#e2e8f0"></polyline>
-              <circle cx="12" cy="8" r="7" fill="#f8fafc"></circle>
+            <svg className="w-7 h-7 text-amber-500 shrink-0 drop-shadow-sm group-hover/award:scale-110 group-hover/award:rotate-3 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" fill="#fde68a"></polyline>
+              <circle cx="12" cy="8" r="7" fill="#fef3c7"></circle>
             </svg>
             <div className="min-w-0 flex-1">
               <p className="text-[13px] font-extrabold text-gray-900 break-words leading-tight" title={monthlyName}>{monthlyName}</p>
               <div className="mt-1.5">
-                <span className="text-[11px] text-slate-700 font-bold bg-white px-2.5 py-0.5 rounded-md border border-slate-200 shadow-sm inline-block">
+                <span className="text-[11px] text-amber-700 font-bold bg-amber-100/60 px-2.5 py-0.5 rounded-md border border-amber-200/50 shadow-sm inline-block">
                   {monthlyVal}
                 </span>
               </div>

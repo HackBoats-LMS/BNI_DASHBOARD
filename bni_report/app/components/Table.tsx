@@ -4,7 +4,7 @@ import React, { useState, useRef } from 'react';
 import MemberModal from './MemberModal';
 import * as htmlToImage from 'html-to-image';
 
-export default function Table({ initialData = [], comparisonData = [], chapterData }: { initialData: any[], comparisonData?: any[], chapterData?: any }) {
+export default function Table({ initialData = [], allMonthlyData = [], comparisonData = [], chapterData }: { initialData: any[], allMonthlyData?: any[], comparisonData?: any[], chapterData?: any }) {
   const chapterName = chapterData?.chapterName || "Infinity Chapter";
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'score' | 'name'>('score');
@@ -440,7 +440,13 @@ export default function Table({ initialData = [], comparisonData = [], chapterDa
 
       {/* Modal */}
       {selectedMember && (
-        <MemberModal member={selectedMember} comparisonData={comparisonData} onClose={() => setSelectedMember(null)} chapterData={chapterData} />
+        <MemberModal 
+          member={selectedMember} 
+          allMonthlyData={allMonthlyData}
+          comparisonData={comparisonData} 
+          onClose={() => setSelectedMember(null)}
+          chapterData={chapterData}
+        />
       )}
     </div>
   );

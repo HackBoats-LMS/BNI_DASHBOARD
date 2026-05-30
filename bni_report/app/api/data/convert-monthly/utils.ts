@@ -151,6 +151,7 @@ export function transformMemeber(row: any) {
         onetoonePoints: onetoonePoints || 0,
         CEU: rowCEU || 0, // RAW CEUs
         CEUPoints: CEUPoints || 0,
+        sponsors: Sponsor || 0, // RAW Sponsors
         sponsorPoints: sponsorPoints || 0,
         totalScore: totalScore || 0,
         band: band || "GREY",

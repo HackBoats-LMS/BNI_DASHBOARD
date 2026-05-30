@@ -73,7 +73,8 @@ export async function POST(req: Request) {
         const new_data = filteredData.map((row: any) => ({
             ...transformMemeber(row),
             uploadBatchId: batchId,
-            reportType: "monthly"
+            reportType: "monthly",
+            periodDate: monthlyMonthName // Store YYYY-MM
         }));
         await MonthlyReport.insertMany(new_data);
 

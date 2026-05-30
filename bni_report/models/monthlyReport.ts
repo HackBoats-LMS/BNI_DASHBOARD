@@ -98,6 +98,15 @@ const monthlyReportSchema =
       default: "overall",
     },
 
+    periodDate: {
+      type: String,
+    },
+    
+    sponsors: {
+      type: Number,
+      default: 0,
+    },
+
   }, {
     timestamps: true,
   });

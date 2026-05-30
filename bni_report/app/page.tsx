@@ -41,20 +41,25 @@ const getCachedData = async (type: string = 'overall') => {
       try {
         await connectDB();
         let Model: any = MemberReport;
-        if (type === 'monthly') Model = MonthlyReport;
+        if (type === 'monthly' || type === 'all-monthly') Model = MonthlyReport;
         if (type === 'historical') Model = HistoricalReport;
         if (type === 'comparison') Model = ComparisonReport;
 
         const query = type === 'overall'
           ? { $or: [{ reportType: 'overall' }, { reportType: { $exists: false } }] }
-          : { reportType: type };
+          : { reportType: (type === 'all-monthly' ? 'monthly' : type) };
 
-        const latestDoc = await Model.findOne(query).sort({ createdAt: -1 }).lean();
         let data = [];
-        if (latestDoc && latestDoc.uploadBatchId) {
-          data = await Model.find({ uploadBatchId: latestDoc.uploadBatchId }).lean();
+        if (type === 'all-monthly') {
+           data = await Model.find(query).sort({ periodDate: -1 }).lean();
         } else {
-          data = await Model.find(query).lean();
+           const sortStrategy = type === 'monthly' ? { periodDate: -1, createdAt: -1 } : { createdAt: -1 };
+           const latestDoc = await Model.findOne(query).sort(sortStrategy).lean();
+           if (latestDoc && latestDoc.uploadBatchId) {
+             data = await Model.find({ uploadBatchId: latestDoc.uploadBatchId }).lean();
+           } else {
+             data = await Model.find(query).lean();
+           }
         }
         // Serialize to avoid Next.js warning when passing to client components
         return data.map((d: any) => ({
@@ -78,6 +83,7 @@ export const dynamic = 'force-static';
 export default async function Home() {
   const data = await getCachedData('overall');
   const monthlyData = await getCachedData('monthly');
+  const allMonthlyData = await getCachedData('all-monthly');
   const historicalData = await getCachedData('historical');
   const comparisonData = await getCachedData('comparison');
   const chapterData = await getCachedChapterSettings();
@@ -102,7 +108,7 @@ export default async function Home() {
           <Recognition data={data} monthlyData={monthlyData || []} chapterData={chapterData} />
         </div>
       </div>
-      <Table initialData={data} comparisonData={comparisonData} chapterData={chapterData} />
+      <Table initialData={data} allMonthlyData={allMonthlyData} comparisonData={comparisonData} chapterData={chapterData} />
       <ScoringParameters />
     </main>
   );
